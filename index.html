@@ -33,11 +33,6 @@
                 <span class="font-black text-lg tracking-tighter uppercase">eRPH Cloud</span>
             </div>
             <div class="flex items-center space-x-2">
-                <!-- Tombol Tukar Peranan (Hanya muncul jika Dual Role) -->
-                <button id="roleSwitchBtn" onclick="switchRole()" class="hidden bg-yellow-500 text-indigo-900 px-3 py-1 rounded-full text-xs font-bold hover:bg-yellow-400 transition shadow-lg mr-2 flex items-center">
-                    <span class="material-icons text-sm mr-1">swap_horiz</span> TUKAR PERANAN
-                </button>
-
                 <button onclick="accessMasterAdmin()" class="text-[10px] border border-indigo-400 px-2 py-1 rounded-md opacity-70 hover:opacity-100 transition">ADMIN MASTER</button>
                 <button id="logoutBtn" onclick="location.reload()" class="hidden bg-red-500 p-1 rounded-full"><span class="material-icons text-sm">power_settings_new</span></button>
             </div>
@@ -47,13 +42,11 @@
     <div class="container mx-auto p-4 max-w-xl">
         
         <div id="loginSection" class="bg-white mt-10 p-8 rounded-3xl shadow-xl text-center relative overflow-hidden">
-            <!-- Auth Tabs -->
             <div class="flex justify-center space-x-6 mb-8 border-b border-gray-100 pb-2">
                 <button onclick="toggleAuthMode('login')" id="tabLogin" class="text-indigo-900 font-bold border-b-2 border-indigo-900 pb-2 transition">LOG MASUK</button>
                 <button onclick="toggleAuthMode('signup')" id="tabSignup" class="text-gray-400 font-bold border-b-2 border-transparent pb-2 transition hover:text-indigo-600">DAFTAR BARU</button>
             </div>
 
-            <!-- Login Form -->
             <div id="formLogin" class="animate-fade-in">
                 <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span class="material-icons text-4xl text-blue-600">lock_person</span>
@@ -74,7 +67,6 @@
                 </button>
             </div>
 
-            <!-- Signup Form -->
             <div id="formSignup" class="hidden text-left animate-fade-in">
                 <div class="space-y-4">
                     <div>
@@ -167,13 +159,6 @@
                     <textarea id="mMemberEmails" placeholder="Senarai Emel Penghantar (Asingkan dengan koma)" class="w-full bg-gray-800 border-none p-4 rounded-xl text-sm h-32"></textarea>
                     <button onclick="addNewGroup()" class="w-full bg-red-600 py-4 rounded-xl font-bold text-sm shadow-lg shadow-red-900/50">DAFTAR KUMPULAN & AHLI</button>
                 </div>
-                
-                <div class="mt-8 border-t border-gray-700 pt-6">
-                    <h3 class="text-sm font-bold text-gray-400 mb-3 uppercase">Senarai Kumpulan Aktif</h3>
-                    <div id="masterGroupList" class="space-y-2">
-                        <p class="text-gray-600 text-xs italic">Tiada kumpulan lagi.</p>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -181,49 +166,44 @@
 
     <script>
         let currentUserEmail = "";
-        let myAdminGroups = [];
-        let myGuruGroups = [];
-        let currentRoleView = "";
 
-        // --- [PEMBEDAHAN CIKGU AI] INTEGRASI CLOUD PWA ---
-        // URL Web App yang dimasukkan:
-        const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbzt1nu7C2iEKk1zmn7f2nccE-fSV58hgpCVceQElFWMZrWBpptOfLTWxAWxLqU5n5JtyA/exec";
+        // --- KONFIGURASI WEB APP URL ---
+        // Sila pastikan URL ini betul (Hujung URL mesti ada /exec)
+        const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbxEY1A3hWrX4S-LASgS69UqX3fikOsbsdN4pik-4u84e3Rx71Ld6P_0XqSXOR2bbS1L/exec";
 
-        if (typeof google === 'undefined' || typeof google.script === 'undefined') {
-            console.log("Mode PWA/Browser dikesan. Menyambung ke: " + CLOUD_API_URL);
+        // Baiki fungsi runCloud untuk keserasian PWA yang lebih stabil
+        const runCloud = (funcName, args, callback) => {
+            const params = new URLSearchParams();
+            params.append('action', funcName);
+            params.append('args', JSON.stringify(args));
             
-            const runCloud = (funcName, args, callback) => {
-                const formData = new FormData();
-                formData.append('action', funcName);
-                formData.append('args', JSON.stringify(args)); // Menghantar args sebagai JSON string
-                
-                fetch(CLOUD_API_URL, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(res => res.json())
-                .then(data => callback(data))
-                .catch(err => {
-                    console.error("Ralat Sambungan Cloud:", err);
-                    alert("Gagal menyambung ke server. Sila pastikan anda online dan App Script mempunyai fungsi doPost.");
-                });
-            };
+            fetch(CLOUD_API_URL, {
+                method: 'POST',
+                body: params,
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            })
+            .then(res => res.json())
+            .then(data => callback(data))
+            .catch(err => {
+                showLoading(false);
+                console.error("Ralat Sambungan Cloud:", err);
+                alert("Ralat Sambungan! Pastikan anda sudah Deploy sebagai 'Anyone' dan menggunakan URL terkini.");
+            });
+        };
 
-            window.google = { script: { run: {
-                withSuccessHandler: function(callback) {
-                    return {
-                        verifyUserLogin: (e, p) => runCloud('verifyUserLogin', [e, p], callback),
-                        registerUserToDrive: (d) => runCloud('registerUserToDrive', [d], callback),
-                        getAvailableWeeks: () => runCloud('getAvailableWeeks', [], callback),
-                        backendUpload: (p) => runCloud('backendUpload', [p], callback),
-                        backendCreateFolder: (n) => runCloud('backendCreateFolder', [n], callback),
-                        saveGroup: (n,a,m) => runCloud('saveGroup', [n,a,m], callback),
-                        getAllGroups: () => runCloud('getAllGroups', [], callback)
-                    }
+        // Inject google.script.run untuk keserasian dalam PWA
+        window.google = { script: { run: {
+            withSuccessHandler: function(callback) {
+                return {
+                    verifyUserLogin: (e, p) => runCloud('verifyUserLogin', [e, p], callback),
+                    registerUserToDrive: (d) => runCloud('registerUserToDrive', [d], callback),
+                    getAvailableWeeks: () => runCloud('getAvailableWeeks', [], callback),
+                    backendUpload: (p) => runCloud('backendUpload', [p], callback),
+                    backendCreateFolder: (n) => runCloud('backendCreateFolder', [n], callback),
+                    saveGroup: (n,a,m) => runCloud('saveGroup', [n,a,m], callback)
                 }
-            }}};
-        }
-        // ----------------------------------------------------
+            }
+        }}};
 
         function showLoading(v) { document.getElementById('loading').style.display = v ? 'flex' : 'none'; }
 
@@ -255,7 +235,6 @@
             if(!email.includes('@')) return alert("Sila masukkan format emel yang sah.");
 
             showLoading(true);
-            // Hantar data ke backend (Sheet 'user')
             google.script.run.withSuccessHandler(res => {
                 showLoading(false);
                 alert(res);
@@ -274,52 +253,19 @@
                 showLoading(false);
                 if(!res.found) return alert("Login Gagal! Emel/Password salah atau tiada dalam rekod.");
                 
-                // Simpan data user & role
                 currentUserEmail = res.email;
-                myAdminGroups = res.adminGroups || [];
-                myGuruGroups = res.guruGroups || [];
-                
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('logoutBtn').classList.remove('hidden');
 
-                // LOGIC ROLE & UI
-                if(myAdminGroups.length > 0 && myGuruGroups.length > 0) {
-                    // Dual Role
-                    document.getElementById('roleSwitchBtn').classList.remove('hidden');
-                    loadAdminView(); // Default ke view admin
-                } else if (myAdminGroups.length > 0) {
-                    loadAdminView();
-                } else if (myGuruGroups.length > 0) {
-                    loadGuruView();
+                if(res.role === "ADMIN_KUMPULAN") {
+                    document.getElementById('penyemakPanel').classList.add('active-tab');
+                    document.getElementById('groupNameLabel').innerText = res.group;
                 } else {
-                    alert("Akaun anda sah tetapi anda belum dimasukkan ke mana-mana kumpulan. Sila hubungi Master Admin.");
-                    location.reload();
+                    document.getElementById('guruPanel').classList.add('active-tab');
+                    if(res.group) document.getElementById('guruGroupInfo').innerText = res.group;
+                    loadWeekDropdown();
                 }
-
             }).verifyUserLogin(email, pass);
-        }
-
-        function loadAdminView() {
-            currentRoleView = 'ADMIN';
-            document.getElementById('penyemakPanel').classList.add('active-tab');
-            document.getElementById('guruPanel').classList.remove('active-tab');
-            document.getElementById('groupNameLabel').innerText = myAdminGroups.join(', ');
-        }
-
-        function loadGuruView() {
-            currentRoleView = 'GURU';
-            document.getElementById('guruPanel').classList.add('active-tab');
-            document.getElementById('penyemakPanel').classList.remove('active-tab');
-            document.getElementById('guruGroupInfo').innerText = myGuruGroups.join(', ');
-            loadWeekDropdown();
-        }
-
-        function switchRole() {
-            if(currentRoleView === 'ADMIN') {
-                loadGuruView();
-            } else {
-                loadAdminView();
-            }
         }
 
         function accessMasterAdmin() {
@@ -329,32 +275,9 @@
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('masterAdminPanel').classList.add('active-tab');
                 document.getElementById('logoutBtn').classList.remove('hidden');
-                document.getElementById('roleSwitchBtn').classList.add('hidden');
-                loadMasterGroups();
             } else {
                 alert("Akses Ditolak!");
             }
-        }
-
-        function loadMasterGroups() {
-            google.script.run.withSuccessHandler(groups => {
-                const list = document.getElementById('masterGroupList');
-                if(groups.length === 0) {
-                    list.innerHTML = '<p class="text-gray-600 text-xs italic">Tiada kumpulan lagi.</p>';
-                } else {
-                    list.innerHTML = groups.map(g => 
-                        `<div class="bg-gray-800 p-3 rounded-lg border border-gray-700 flex justify-between">
-                            <div>
-                                <p class="font-bold text-yellow-500">${g.name}</p>
-                                <p class="text-[10px] text-gray-400">Admin: ${g.admin}</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-[10px] text-indigo-400">${g.membersCount} Ahli</p>
-                            </div>
-                        </div>`
-                    ).join('');
-                }
-            }).getAllGroups();
         }
 
         function loadWeekDropdown() {
@@ -379,7 +302,7 @@
                     mimeType: file.type,
                     fileName: file.name,
                     week: week,
-                    email: currentUserEmail // Hantar emel untuk penamaan fail
+                    email: currentUserEmail
                 };
                 google.script.run.withSuccessHandler(res => {
                     showLoading(false);
@@ -412,10 +335,7 @@
             google.script.run.withSuccessHandler(res => {
                 showLoading(false);
                 alert(res);
-                document.getElementById('mGroupName').value = '';
-                document.getElementById('mAdminEmail').value = '';
-                document.getElementById('mMemberEmails').value = '';
-                loadMasterGroups();
+                location.reload();
             }).saveGroup(gn, ae, mem);
         }
 
