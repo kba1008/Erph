@@ -49,7 +49,7 @@
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <span class="material-icons">cloud_done</span>
-                <span class="font-black text-lg tracking-tighter uppercase">eRPH Cloud 552</span>
+                <span class="font-black text-lg tracking-tighter uppercase">eRPH Cloud 551</span>
             </div>
             <button id="logoutBtn" onclick="location.reload()" class="hidden bg-red-500 p-2 rounded-full hover:bg-red-600 transition"><span class="material-icons text-sm">power_settings_new</span></button>
         </div>
@@ -243,8 +243,8 @@ MASUK</button>
 
         // Teacher Dropdown
         function loadWeekDropdown() {
-            // Teachers fetch weeks by Group Name
-            runCloud('getAvailableWeeks', [currentGroup], weeks => {
+            // Teachers fetch weeks by Group Name. FIX: Added currentUserEmail for verification
+            runCloud('getAvailableWeeks', [currentGroup, currentUserEmail], weeks => {
                 const el = document.getElementById('weekSelect');
                 el.innerHTML = '<option value="">-- Pilih Minggu --</option>';
                 weeks.forEach(w => el.innerHTML += `<option value="${w}">${w}</option>`);
@@ -253,8 +253,8 @@ MASUK</button>
 
         // Admin Dropdown
         function loadAdminWeekDropdown() {
-             // Admin also fetches weeks by Group Name to stay consistent
-            runCloud('getAvailableWeeks', [currentGroup], weeks => {
+             // Admin also fetches weeks by Group Name to stay consistent. FIX: Added currentUserEmail
+            runCloud('getAvailableWeeks', [currentGroup, currentUserEmail], weeks => {
                 const el = document.getElementById('adminWeekSelect');
                 el.innerHTML = '<option value="">-- Pilih Minggu Semakan --</option>';
                 weeks.forEach(w => el.innerHTML += `<option value="${w}">${w}</option>`);
