@@ -49,7 +49,7 @@
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <span class="material-icons">cloud_done</span>
-                <span class="font-black text-lg tracking-tighter uppercase">eRPH Cloud 551</span>
+                <span class="font-black text-lg tracking-tighter uppercase">eRPH Cloud 552</span>
             </div>
             <button id="logoutBtn" onclick="location.reload()" class="hidden bg-red-500 p-2 rounded-full hover:bg-red-600 transition"><span class="material-icons text-sm">power_settings_new</span></button>
         </div>
@@ -148,6 +148,7 @@ MASUK</button>
 
     <script>
         let currentUserEmail = "";
+        let currentGroup = ""; // Added for Group Logic
         // Canvas Variables
         let canvas, ctx, isDrawing = false;
         const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbyFJGkL56NVT2cwSR3r7cuQdSPzbF4Bf5qDnk2Lem9_FH1HXCqHhBZtRXbVlcJLd6Q33A/exec";
@@ -176,6 +177,7 @@ MASUK</button>
                 showLoading(false);
                 if(!res.found) return alert("Login Gagal! Emel atau katalaluan salah.");
                 currentUserEmail = res.email;
+                currentGroup = res.group; // Store group for folder lookups
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('logoutBtn').classList.remove('hidden');
                 
@@ -231,7 +233,8 @@ MASUK</button>
             const name = prompt("Nama Minggu Baru (Cth: MINGGU 1):");
             if(!name) return;
             showLoading(true);
-            runCloud('backendCreateFolder', [name, currentUserEmail], res => {
+            // Pass currentGroup to ensure folder is created under the Group, not just email
+            runCloud('backendCreateFolder', [name, currentGroup, currentUserEmail], res => {
                 showLoading(false);
                 alert(res);
                 loadAdminWeekDropdown(); // Refresh dropdown
@@ -240,7 +243,8 @@ MASUK</button>
 
         // Teacher Dropdown
         function loadWeekDropdown() {
-            runCloud('getAvailableWeeks', [currentUserEmail], weeks => {
+            // Teachers fetch weeks by Group Name
+            runCloud('getAvailableWeeks', [currentGroup], weeks => {
                 const el = document.getElementById('weekSelect');
                 el.innerHTML = '<option value="">-- Pilih Minggu --</option>';
                 weeks.forEach(w => el.innerHTML += `<option value="${w}">${w}</option>`);
@@ -249,7 +253,8 @@ MASUK</button>
 
         // Admin Dropdown
         function loadAdminWeekDropdown() {
-            runCloud('getAvailableWeeks', [currentUserEmail], weeks => {
+             // Admin also fetches weeks by Group Name to stay consistent
+            runCloud('getAvailableWeeks', [currentGroup], weeks => {
                 const el = document.getElementById('adminWeekSelect');
                 el.innerHTML = '<option value="">-- Pilih Minggu Semakan --</option>';
                 weeks.forEach(w => el.innerHTML += `<option value="${w}">${w}</option>`);
