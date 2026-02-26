@@ -85,11 +85,11 @@
                         <div class="flex items-start">
                             <span class="material-icons text-indigo-500 text-sm mt-0.5 mr-2">info</span>
                             <p class="text-[11px] text-indigo-800 leading-snug">
-                                <span class="font-bold">PENTING:</span> Selepas daftar, status anda adalah <span class="font-bold text-red-600 italic">PENDING</span>. Sila maklumkan pada Admin Master untuk kelulusan kumpulan.
+                                <span class="font-bold">PENTING:</span> Maklumat login anda akan disimpan di Google Sheet 'user'.
                             </p>
                         </div>
                     </div>
-                    <button id="btnReg" onclick="handleSignup()" class="w-full bg-gray-800 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-gray-900 transition flex items-center justify-center">
+                    <button onclick="handleSignup()" class="w-full bg-gray-800 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-gray-900 transition flex items-center justify-center">
                         <span class="material-icons mr-2">person_add</span> HANTAR PENDAFTARAN
                     </button>
                 </div>
@@ -167,41 +167,43 @@
     <script>
         let currentUserEmail = "";
 
-        // URL Web App
-        const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbyldlcnk4HV9A6wu0jtP02m_H6eeCqBxu6YG1ByaQ_IYB5Ecaj-beI_YrT_o_f8_iqjsw/exec";
+        // --- KONFIGURASI WEB APP URL ---
+        // Sila pastikan URL ini betul (Hujung URL mesti ada /exec)
+        const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbxEY1A3hWrX4S-LASgS69UqX3fikOsbsdN4pik-4u84e3Rx71Ld6P_0XqSXOR2bbS1L/exec";
 
-        if (typeof google === 'undefined' || typeof google.script === 'undefined') {
-            const runCloud = (funcName, args, callback) => {
-                const params = new URLSearchParams();
-                params.append('action', funcName);
-                params.append('args', JSON.stringify(args));
-                
-                fetch(CLOUD_API_URL, {
-                    method: 'POST',
-                    body: params,
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-                })
-                .then(res => res.json())
-                .then(data => callback(data))
-                .catch(err => {
-                    showLoading(false);
-                    alert("Ralat Sambungan! Pastikan Web App sudah di-Deploy sebagai 'Anyone'.");
-                });
-            };
+        // Baiki fungsi runCloud untuk keserasian PWA yang lebih stabil
+        const runCloud = (funcName, args, callback) => {
+            const params = new URLSearchParams();
+            params.append('action', funcName);
+            params.append('args', JSON.stringify(args));
+            
+            fetch(CLOUD_API_URL, {
+                method: 'POST',
+                body: params,
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            })
+            .then(res => res.json())
+            .then(data => callback(data))
+            .catch(err => {
+                showLoading(false);
+                console.error("Ralat Sambungan Cloud:", err);
+                alert("Ralat Sambungan! Pastikan anda sudah Deploy sebagai 'Anyone' dan menggunakan URL terkini.");
+            });
+        };
 
-            window.google = { script: { run: {
-                withSuccessHandler: function(callback) {
-                    return {
-                        verifyUserLogin: (e, p) => runCloud('verifyUserLogin', [e, p], callback),
-                        registerUserToDrive: (d) => runCloud('registerUserToDrive', [d], callback),
-                        getAvailableWeeks: () => runCloud('getAvailableWeeks', [], callback),
-                        backendUpload: (p) => runCloud('backendUpload', [p], callback),
-                        backendCreateFolder: (n) => runCloud('backendCreateFolder', [n], callback),
-                        saveGroup: (n,a,m) => runCloud('saveGroup', [n,a,m], callback)
-                    }
+        // Inject google.script.run untuk keserasian dalam PWA
+        window.google = { script: { run: {
+            withSuccessHandler: function(callback) {
+                return {
+                    verifyUserLogin: (e, p) => runCloud('verifyUserLogin', [e, p], callback),
+                    registerUserToDrive: (d) => runCloud('registerUserToDrive', [d], callback),
+                    getAvailableWeeks: () => runCloud('getAvailableWeeks', [], callback),
+                    backendUpload: (p) => runCloud('backendUpload', [p], callback),
+                    backendCreateFolder: (n) => runCloud('backendCreateFolder', [n], callback),
+                    saveGroup: (n,a,m) => runCloud('saveGroup', [n,a,m], callback)
                 }
-            }}};
-        }
+            }
+        }}};
 
         function showLoading(v) { document.getElementById('loading').style.display = v ? 'flex' : 'none'; }
 
@@ -210,55 +212,51 @@
             const fS = document.getElementById('formSignup');
             const tL = document.getElementById('tabLogin');
             const tS = document.getElementById('tabSignup');
+
             if(mode === 'login') {
-                fL.classList.remove('hidden'); fS.classList.add('hidden');
+                fL.classList.remove('hidden');
+                fS.classList.add('hidden');
                 tL.className = "text-indigo-900 font-bold border-b-2 border-indigo-900 pb-2 transition";
                 tS.className = "text-gray-400 font-bold border-b-2 border-transparent pb-2 transition hover:text-indigo-600";
             } else {
-                fL.classList.add('hidden'); fS.classList.remove('hidden');
+                fL.classList.add('hidden');
+                fS.classList.remove('hidden');
                 tS.className = "text-indigo-900 font-bold border-b-2 border-indigo-900 pb-2 transition";
                 tL.className = "text-gray-400 font-bold border-b-2 border-transparent pb-2 transition hover:text-indigo-600";
             }
         }
 
-        // --- KEMASKINI PENDAFTARAN SAHAJA ---
         function handleSignup() {
-            const name = document.getElementById('regName').value.trim();
-            const email = document.getElementById('regEmail').value.trim();
-            const pass = document.getElementById('regPass').value.trim();
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const pass = document.getElementById('regPass').value;
             
-            if(!name || !email || !pass) return alert("Borang tak lengkap! Sila isi semua.");
-            if(!email.includes('@gmail.com')) return alert("Gunakan emel Gmail yang sah.");
+            if(!name || !email || !pass) return alert("Sila lengkapkan semua butiran termasuk kata laluan.");
+            if(!email.includes('@')) return alert("Sila masukkan format emel yang sah.");
 
             showLoading(true);
-            document.getElementById('btnReg').disabled = true;
-
             google.script.run.withSuccessHandler(res => {
                 showLoading(false);
-                document.getElementById('btnReg').disabled = false;
                 alert(res);
-                
-                // Jika berjaya, cuci form & balik ke tab login
-                document.getElementById('regName').value = "";
-                document.getElementById('regEmail').value = "";
-                document.getElementById('regPass').value = "";
                 toggleAuthMode('login');
-                
             }).registerUserToDrive({ name, email, pass });
         }
-        // ------------------------------------
 
         function handleLogin() {
             const email = document.getElementById('loginEmail').value;
             const pass = document.getElementById('loginPass').value;
+            
             if(!email || !pass) return alert("Sila masukkan emel dan kata laluan.");
+
             showLoading(true);
             google.script.run.withSuccessHandler(res => {
                 showLoading(false);
-                if(!res.found) return alert("Login Gagal! Rekod tidak ditemui.");
+                if(!res.found) return alert("Login Gagal! Emel/Password salah atau tiada dalam rekod.");
+                
                 currentUserEmail = res.email;
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('logoutBtn').classList.remove('hidden');
+
                 if(res.role === "ADMIN_KUMPULAN") {
                     document.getElementById('penyemakPanel').classList.add('active-tab');
                     document.getElementById('groupNameLabel').innerText = res.group;
@@ -277,7 +275,9 @@
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('masterAdminPanel').classList.add('active-tab');
                 document.getElementById('logoutBtn').classList.remove('hidden');
-            } else { alert("Akses Ditolak!"); }
+            } else {
+                alert("Akses Ditolak!");
+            }
         }
 
         function loadWeekDropdown() {
@@ -292,6 +292,7 @@
             const week = document.getElementById('weekSelect').value;
             const fileInput = document.getElementById('rphFileInput');
             if(!week || fileInput.files.length === 0) return alert("Sila lengkapkan pilihan!");
+
             showLoading(true);
             const file = fileInput.files[0];
             const reader = new FileReader();
@@ -327,7 +328,9 @@
             const gn = document.getElementById('mGroupName').value;
             const ae = document.getElementById('mAdminEmail').value;
             const mem = document.getElementById('mMemberEmails').value;
-            if(!gn || !ae || !mem) return alert("Isi semua info!");
+            
+            if(!gn || !ae || !mem) return alert("Isi semua info termasuk senarai guru!");
+            
             showLoading(true);
             google.script.run.withSuccessHandler(res => {
                 showLoading(false);
@@ -347,5 +350,3 @@
     </script>
 </body>
 </html>
-
-
