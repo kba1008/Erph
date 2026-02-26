@@ -172,7 +172,7 @@
 
         // --- [PEMBEDAHAN CIKGU AI] INTEGRASI CLOUD PWA ---
         // URL Web App yang dimasukkan:
-        const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbzt1nu7C2iEKk1zmn7f2nccE-fSV58hgpCVceQElFWMZrWBpptOfLTWxAWxLqU5n5JtyA/exec";
+        const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbw-zeoTvLGgz2XY5zu9ab7I_dcy8gqRn4nzoJPKnEsi_abb5eenJVlE-nN0q19Dx0PXJQ/exec";
 
         if (typeof google === 'undefined' || typeof google.script === 'undefined') {
             console.log("Mode PWA/Browser dikesan. Menyambung ke: " + CLOUD_API_URL);
@@ -190,7 +190,7 @@
                 .then(data => callback(data))
                 .catch(err => {
                     console.error("Ralat Sambungan Cloud:", err);
-                    alert("Gagal menyambung ke server. Sila pastikan anda online.");
+                    alert("Gagal menyambung ke server. Sila pastikan anda online dan App Script mempunyai fungsi doPost.");
                 });
             };
 
