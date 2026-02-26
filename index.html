@@ -112,7 +112,8 @@
                 <div class="space-y-4">
                     <input type="text" id="mGroupName" placeholder="Nama Kumpulan (Cth: Kumpulan PKP)" class="w-full bg-gray-800 border-none p-4 rounded-xl text-sm">
                     <input type="email" id="mAdminEmail" placeholder="Emel Admin Kumpulan (Penyemak)" class="w-full bg-gray-800 border-none p-4 rounded-xl text-sm">
-                    <button onclick="addNewGroup()" class="w-full bg-red-600 py-4 rounded-xl font-bold text-sm shadow-lg shadow-red-900/50">DAFTAR PENYEMAK BARU</button>
+                    <textarea id="mMemberEmails" placeholder="Senarai Emel Penghantar (Asingkan dengan koma)" class="w-full bg-gray-800 border-none p-4 rounded-xl text-sm h-32"></textarea>
+                    <button onclick="addNewGroup()" class="w-full bg-red-600 py-4 rounded-xl font-bold text-sm shadow-lg shadow-red-900/50">DAFTAR KUMPULAN & AHLI</button>
                 </div>
             </div>
         </div>
@@ -121,6 +122,34 @@
 
     <script>
         const webAppUrl = "https://script.google.com/macros/s/AKfycbzNGQouelsuR28adzuUlhMk8eKnQaso2Bk7RRJIvB9Y0QrPrpW3xILisZGp-Il3n6TAqg/exec";
+
+        // --- [PEMBEDAHAN CIKGU AI] MOCK BACKEND UNTUK PWA ---
+        // Ini membolehkan butang login berfungsi walaupun tanpa sambungan Google Apps Script (GAS).
+        if (typeof google === 'undefined' || typeof google.script === 'undefined') {
+            console.log("Mode PWA/Browser dikesan. Mengaktifkan simulasi Mock Backend.");
+            window.google = { script: { run: {
+                withSuccessHandler: function(callback) {
+                    return {
+                        getUserDataFromSheet: function() {
+                            // Simulasi Login Berjaya
+                            setTimeout(() => callback({
+                                found: true, 
+                                email: 'cikgu.demo@gmail.com', 
+                                role: 'GURU', // Tukar 'ADMIN_KUMPULAN' untuk test panel admin
+                                group: 'Kumpulan Demo'
+                            }), 1000);
+                        },
+                        getAvailableWeeks: function() {
+                            setTimeout(() => callback(['MINGGU 1', 'MINGGU 2', 'MINGGU 3']), 500);
+                        },
+                        backendUpload: function(p) { setTimeout(() => callback("OK"), 1000); },
+                        backendCreateFolder: function(n) { setTimeout(() => callback("Folder Created"), 1000); },
+                        saveGroup: function(n,a,m) { setTimeout(() => callback("Group Saved"), 1000); }
+                    }
+                }
+            }}};
+        }
+        // ----------------------------------------------------
 
         function showLoading(v) { document.getElementById('loading').style.display = v ? 'flex' : 'none'; }
 
@@ -206,13 +235,16 @@
         function addNewGroup() {
             const gn = document.getElementById('mGroupName').value;
             const ae = document.getElementById('mAdminEmail').value;
-            if(!gn || !ae) return alert("Isi semua info!");
+            const mem = document.getElementById('mMemberEmails').value;
+            
+            if(!gn || !ae || !mem) return alert("Isi semua info termasuk senarai guru!");
+            
             showLoading(true);
             google.script.run.withSuccessHandler(res => {
                 showLoading(false);
                 alert(res);
                 location.reload();
-            }).saveGroup(gn, ae);
+            }).saveGroup(gn, ae, mem);
         }
 
         // UI Listener: Tunjuk nama fail selepas dipilih
