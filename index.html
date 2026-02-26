@@ -55,7 +55,10 @@
         <div id="guruPanel" class="tab-content space-y-4">
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-bold text-indigo-900">Penghantaran RPH</h2>
+                    <div>
+                        <h2 class="text-xl font-bold text-indigo-900">Penghantaran RPH</h2>
+                        <p class="text-xs text-gray-400 mt-1">Kumpulan: <span id="guruGroupInfo" class="text-indigo-600 font-bold">...</span></p>
+                    </div>
                     <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-bold uppercase" id="guruRoleLabel">GURU</span>
                 </div>
 
@@ -136,6 +139,7 @@
                     document.getElementById('groupNameLabel').innerText = res.group;
                 } else {
                     document.getElementById('guruPanel').classList.add('active-tab');
+                    if(res.group) document.getElementById('guruGroupInfo').innerText = res.group;
                     loadWeekDropdown();
                 }
             }).getUserDataFromSheet();
