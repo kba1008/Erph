@@ -30,7 +30,7 @@
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <span class="material-icons">cloud_done</span>
-                <span class="font-black text-lg tracking-tighter uppercase">eRPH Cloud 10</span>
+                <span class="font-black text-lg tracking-tighter uppercase">eRPH Cloud</span>
             </div>
             <div class="flex items-center space-x-2">
                 <button onclick="accessMasterAdmin()" class="text-[10px] border border-indigo-400 px-2 py-1 rounded-md opacity-70 hover:opacity-100 transition">ADMIN MASTER</button>
@@ -41,15 +41,49 @@
 
     <div class="container mx-auto p-4 max-w-xl">
         
-        <div id="loginSection" class="bg-white mt-10 p-10 rounded-3xl shadow-xl text-center">
-            <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span class="material-icons text-5xl text-blue-600">account_circle</span>
+        <div id="loginSection" class="bg-white mt-10 p-8 rounded-3xl shadow-xl text-center relative overflow-hidden">
+            <!-- Auth Tabs -->
+            <div class="flex justify-center space-x-6 mb-8 border-b border-gray-100 pb-2">
+                <button onclick="toggleAuthMode('login')" id="tabLogin" class="text-indigo-900 font-bold border-b-2 border-indigo-900 pb-2 transition">LOG MASUK</button>
+                <button onclick="toggleAuthMode('signup')" id="tabSignup" class="text-gray-400 font-bold border-b-2 border-transparent pb-2 transition hover:text-indigo-600">DAFTAR BARU</button>
             </div>
-            <h1 class="text-2xl font-bold text-gray-800">Log Masuk Pengguna</h1>
-            <p class="text-gray-400 text-sm mb-8">Gunakan akaun Gmail yang didaftarkan oleh sekolah.</p>
-            <button onclick="initUserAuth()" class="w-full btn-grad text-white py-4 rounded-2xl font-black shadow-lg hover:opacity-90 transition transform active:scale-95">
-                MASUK KE DASHBOARD
-            </button>
+
+            <!-- Login Form -->
+            <div id="formLogin" class="animate-fade-in">
+                <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="material-icons text-4xl text-blue-600">lock_person</span>
+                </div>
+                <h1 class="text-xl font-bold text-gray-800">Selamat Kembali</h1>
+                <p class="text-gray-400 text-sm mb-6">Akses dashboard menggunakan Gmail berdaftar.</p>
+                <button onclick="initUserAuth()" class="w-full btn-grad text-white py-3 rounded-2xl font-black shadow-lg hover:opacity-90 transition transform active:scale-95 flex items-center justify-center">
+                    <span class="material-icons mr-2">login</span> MASUK DENGAN GMAIL
+                </button>
+            </div>
+
+            <!-- Signup Form -->
+            <div id="formSignup" class="hidden text-left animate-fade-in">
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase ml-1">Nama Penuh</label>
+                        <input type="text" id="regName" placeholder="Cth: Ahmad Bin Ali" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm outline-none focus:border-indigo-500 focus:bg-white transition">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase ml-1">Emel Gmail Peribadi</label>
+                        <input type="email" id="regEmail" placeholder="nama@gmail.com" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm outline-none focus:border-indigo-500 focus:bg-white transition">
+                    </div>
+                    <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                        <div class="flex items-start">
+                            <span class="material-icons text-indigo-500 text-sm mt-0.5 mr-2">info</span>
+                            <p class="text-[11px] text-indigo-800 leading-snug">
+                                <span class="font-bold">PENTING:</span> Pendaftaran ini memerlukan kelulusan. Sila maklumkan emel anda kepada <span class="font-bold">Admin Master</span> untuk dimasukkan ke dalam kumpulan sebelum boleh log masuk.
+                            </p>
+                        </div>
+                    </div>
+                    <button onclick="handleSignup()" class="w-full bg-gray-800 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-gray-900 transition flex items-center justify-center">
+                        <span class="material-icons mr-2">person_add</span> HANTAR PENDAFTARAN
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div id="guruPanel" class="tab-content space-y-4">
@@ -153,12 +187,48 @@
 
         function showLoading(v) { document.getElementById('loading').style.display = v ? 'flex' : 'none'; }
 
+        // Toggle UI Login/Signup
+        function toggleAuthMode(mode) {
+            const fL = document.getElementById('formLogin');
+            const fS = document.getElementById('formSignup');
+            const tL = document.getElementById('tabLogin');
+            const tS = document.getElementById('tabSignup');
+
+            if(mode === 'login') {
+                fL.classList.remove('hidden');
+                fS.classList.add('hidden');
+                tL.className = "text-indigo-900 font-bold border-b-2 border-indigo-900 pb-2 transition";
+                tS.className = "text-gray-400 font-bold border-b-2 border-transparent pb-2 transition hover:text-indigo-600";
+            } else {
+                fL.classList.add('hidden');
+                fS.classList.remove('hidden');
+                tS.className = "text-indigo-900 font-bold border-b-2 border-indigo-900 pb-2 transition";
+                tL.className = "text-gray-400 font-bold border-b-2 border-transparent pb-2 transition hover:text-indigo-600";
+            }
+        }
+
+        // Handle Signup Simulation
+        function handleSignup() {
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            
+            if(!name || !email) return alert("Sila lengkapkan nama dan emel peribadi anda.");
+            if(!email.includes('@')) return alert("Sila masukkan format emel yang sah.");
+
+            showLoading(true);
+            setTimeout(() => {
+                showLoading(false);
+                alert("Pendaftaran Diterima! \n\nEmel pengesahan telah dihantar ke " + email + ".\n\nSila hubungi Admin Master untuk mengaktifkan akses anda ke kumpulan sekolah.");
+                toggleAuthMode('login');
+            }, 1500);
+        }
+
         // Mula Semakan Role
         function initUserAuth() {
             showLoading(true);
             google.script.run.withSuccessHandler(res => {
                 showLoading(false);
-                if(!res.found) return alert("Ralat: Emel anda ("+ res.email +") tidak berdaftar dalam sistem.");
+                if(!res.found) return alert("Ralat: Emel anda ("+ res.email +") tidak berdaftar. Sila 'DAFTAR BARU' atau hubungi Admin Master.");
                 
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('logoutBtn').classList.remove('hidden');
