@@ -54,9 +54,18 @@
                     <span class="material-icons text-4xl text-blue-600">lock_person</span>
                 </div>
                 <h1 class="text-xl font-bold text-gray-800">Selamat Kembali</h1>
-                <p class="text-gray-400 text-sm mb-6">Akses dashboard menggunakan Gmail berdaftar.</p>
-                <button onclick="initUserAuth()" class="w-full btn-grad text-white py-3 rounded-2xl font-black shadow-lg hover:opacity-90 transition transform active:scale-95 flex items-center justify-center">
-                    <span class="material-icons mr-2">login</span> MASUK DENGAN GMAIL
+                <p class="text-gray-400 text-sm mb-6">Masukkan Emel & Kata Laluan anda.</p>
+                
+                <div class="space-y-3 mb-6 px-4">
+                    <input type="email" id="loginEmail" placeholder="Emel (Cth: nama@gmail.com)" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm outline-none focus:border-indigo-500">
+                    <input type="password" id="loginPass" placeholder="Kata Laluan" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm outline-none focus:border-indigo-500">
+                    <div class="text-right">
+                        <button onclick="alert('Sila hubungi Admin Master untuk semakan password dalam Google Drive.')" class="text-[10px] text-red-400 font-bold hover:underline">LUPA KATA LALUAN?</button>
+                    </div>
+                </div>
+
+                <button onclick="handleLogin()" class="w-full btn-grad text-white py-3 rounded-2xl font-black shadow-lg hover:opacity-90 transition transform active:scale-95 flex items-center justify-center">
+                    <span class="material-icons mr-2">login</span> LOG MASUK
                 </button>
             </div>
 
@@ -71,11 +80,15 @@
                         <label class="text-xs font-bold text-gray-500 uppercase ml-1">Emel Gmail Peribadi</label>
                         <input type="email" id="regEmail" placeholder="nama@gmail.com" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm outline-none focus:border-indigo-500 focus:bg-white transition">
                     </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase ml-1">Cipta Kata Laluan</label>
+                        <input type="password" id="regPass" placeholder="********" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm outline-none focus:border-indigo-500 focus:bg-white transition">
+                    </div>
                     <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
                         <div class="flex items-start">
                             <span class="material-icons text-indigo-500 text-sm mt-0.5 mr-2">info</span>
                             <p class="text-[11px] text-indigo-800 leading-snug">
-                                <span class="font-bold">PENTING:</span> Pendaftaran ini memerlukan kelulusan. Sila maklumkan emel anda kepada <span class="font-bold">Admin Master</span> untuk dimasukkan ke dalam kumpulan sebelum boleh log masuk.
+                                <span class="font-bold">PENTING:</span> Maklumat login anda akan disimpan di Google Drive. Jika terlupa password, hanya Admin boleh menyemaknya.
                             </p>
                         </div>
                     </div>
@@ -158,27 +171,28 @@
         const webAppUrl = "https://script.google.com/macros/s/AKfycbzNGQouelsuR28adzuUlhMk8eKnQaso2Bk7RRJIvB9Y0QrPrpW3xILisZGp-Il3n6TAqg/exec";
 
         // --- [PEMBEDAHAN CIKGU AI] MOCK BACKEND UNTUK PWA ---
-        // Ini membolehkan butang login berfungsi walaupun tanpa sambungan Google Apps Script (GAS).
         if (typeof google === 'undefined' || typeof google.script === 'undefined') {
             console.log("Mode PWA/Browser dikesan. Mengaktifkan simulasi Mock Backend.");
             window.google = { script: { run: {
                 withSuccessHandler: function(callback) {
                     return {
-                        getUserDataFromSheet: function() {
-                            // Simulasi Login Berjaya
-                            setTimeout(() => callback({
-                                found: true, 
-                                email: 'cikgu.demo@gmail.com', 
-                                role: 'GURU', // Tukar 'ADMIN_KUMPULAN' untuk test panel admin
-                                group: 'Kumpulan Demo'
-                            }), 1000);
+                        verifyUserLogin: function(email, pass) {
+                            // Simulasi Semakan Password dari Drive
+                            setTimeout(() => {
+                                if(email === 'cikgu.demo@gmail.com' && pass === '123456') {
+                                    callback({ found: true, email: email, role: 'GURU', group: 'Kumpulan Demo' });
+                                } else {
+                                    callback({ found: false });
+                                }
+                            }, 1000);
                         },
                         getAvailableWeeks: function() {
                             setTimeout(() => callback(['MINGGU 1', 'MINGGU 2', 'MINGGU 3']), 500);
                         },
                         backendUpload: function(p) { setTimeout(() => callback("OK"), 1000); },
                         backendCreateFolder: function(n) { setTimeout(() => callback("Folder Created"), 1000); },
-                        saveGroup: function(n,a,m) { setTimeout(() => callback("Group Saved"), 1000); }
+                        saveGroup: function(n,a,m) { setTimeout(() => callback("Group Saved"), 1000); },
+                        registerUserToDrive: function(data) { setTimeout(() => callback("OK"), 1500); }
                     }
                 }
             }}};
@@ -187,7 +201,6 @@
 
         function showLoading(v) { document.getElementById('loading').style.display = v ? 'flex' : 'none'; }
 
-        // Toggle UI Login/Signup
         function toggleAuthMode(mode) {
             const fL = document.getElementById('formLogin');
             const fS = document.getElementById('formSignup');
@@ -207,28 +220,33 @@
             }
         }
 
-        // Handle Signup Simulation
         function handleSignup() {
             const name = document.getElementById('regName').value;
             const email = document.getElementById('regEmail').value;
+            const pass = document.getElementById('regPass').value;
             
-            if(!name || !email) return alert("Sila lengkapkan nama dan emel peribadi anda.");
+            if(!name || !email || !pass) return alert("Sila lengkapkan semua butiran termasuk kata laluan.");
             if(!email.includes('@')) return alert("Sila masukkan format emel yang sah.");
 
             showLoading(true);
-            setTimeout(() => {
+            // Hantar data ke backend (Drive)
+            google.script.run.withSuccessHandler(res => {
                 showLoading(false);
-                alert("Pendaftaran Diterima! \n\nEmel pengesahan telah dihantar ke " + email + ".\n\nSila hubungi Admin Master untuk mengaktifkan akses anda ke kumpulan sekolah.");
+                alert("Pendaftaran Diterima! \n\nMaklumat login anda telah disimpan di Server/Drive.\nSila tunggu kelulusan Admin Master.");
                 toggleAuthMode('login');
-            }, 1500);
+            }).registerUserToDrive({ name, email, pass });
         }
 
-        // Mula Semakan Role
-        function initUserAuth() {
+        function handleLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+            
+            if(!email || !pass) return alert("Sila masukkan emel dan kata laluan.");
+
             showLoading(true);
             google.script.run.withSuccessHandler(res => {
                 showLoading(false);
-                if(!res.found) return alert("Ralat: Emel anda ("+ res.email +") tidak berdaftar. Sila 'DAFTAR BARU' atau hubungi Admin Master.");
+                if(!res.found) return alert("Login Gagal! Emel atau Kata Laluan salah.");
                 
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('logoutBtn').classList.remove('hidden');
@@ -241,10 +259,9 @@
                     if(res.group) document.getElementById('guruGroupInfo').innerText = res.group;
                     loadWeekDropdown();
                 }
-            }).getUserDataFromSheet();
+            }).verifyUserLogin(email, pass);
         }
 
-        // Master Admin
         function accessMasterAdmin() {
             const pass = prompt("Masukkan Password Master Admin:");
             if(pass === "101010") {
@@ -255,7 +272,6 @@
             } else { alert("Akses Ditolak!"); }
         }
 
-        // Guru: Ambil Senarai Minggu
         function loadWeekDropdown() {
             google.script.run.withSuccessHandler(weeks => {
                 const el = document.getElementById('weekSelect');
@@ -264,7 +280,6 @@
             }).getAvailableWeeks();
         }
 
-        // Guru: Proses Upload
         function handleFileUpload() {
             const week = document.getElementById('weekSelect').value;
             const fileInput = document.getElementById('rphFileInput');
@@ -289,7 +304,6 @@
             reader.readAsDataURL(file);
         }
 
-        // Admin Kumpulan: Buat Minggu Baru
         function createNewWeek() {
             const name = prompt("Nama Minggu (Cth: MINGGU 10):");
             if(name) {
@@ -301,7 +315,6 @@
             }
         }
 
-        // Admin Sistem: Daftar Group
         function addNewGroup() {
             const gn = document.getElementById('mGroupName').value;
             const ae = document.getElementById('mAdminEmail').value;
@@ -317,7 +330,6 @@
             }).saveGroup(gn, ae, mem);
         }
 
-        // UI Listener: Tunjuk nama fail selepas dipilih
         document.getElementById('rphFileInput').onchange = function() {
             if(this.files[0]) {
                 document.getElementById('uploadPlaceholder').innerHTML = `
