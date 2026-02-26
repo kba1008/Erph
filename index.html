@@ -42,13 +42,11 @@
     <div class="container mx-auto p-4 max-w-xl">
         
         <div id="loginSection" class="bg-white mt-10 p-8 rounded-3xl shadow-xl text-center relative overflow-hidden">
-            <!-- Auth Tabs -->
             <div class="flex justify-center space-x-6 mb-8 border-b border-gray-100 pb-2">
                 <button onclick="toggleAuthMode('login')" id="tabLogin" class="text-indigo-900 font-bold border-b-2 border-indigo-900 pb-2 transition">LOG MASUK</button>
                 <button onclick="toggleAuthMode('signup')" id="tabSignup" class="text-gray-400 font-bold border-b-2 border-transparent pb-2 transition hover:text-indigo-600">DAFTAR BARU</button>
             </div>
 
-            <!-- Login Form -->
             <div id="formLogin" class="animate-fade-in">
                 <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span class="material-icons text-4xl text-blue-600">lock_person</span>
@@ -69,7 +67,6 @@
                 </button>
             </div>
 
-            <!-- Signup Form -->
             <div id="formSignup" class="hidden text-left animate-fade-in">
                 <div class="space-y-4">
                     <div>
@@ -88,11 +85,11 @@
                         <div class="flex items-start">
                             <span class="material-icons text-indigo-500 text-sm mt-0.5 mr-2">info</span>
                             <p class="text-[11px] text-indigo-800 leading-snug">
-                                <span class="font-bold">PENTING:</span> Maklumat login anda akan disimpan di Google Sheet 'user'.
+                                <span class="font-bold">PENTING:</span> Selepas daftar, status anda adalah <span class="font-bold text-red-600 italic">PENDING</span>. Sila maklumkan pada Admin Master untuk kelulusan kumpulan.
                             </p>
                         </div>
                     </div>
-                    <button onclick="handleSignup()" class="w-full bg-gray-800 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-gray-900 transition flex items-center justify-center">
+                    <button id="btnReg" onclick="handleSignup()" class="w-full bg-gray-800 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-gray-900 transition flex items-center justify-center">
                         <span class="material-icons mr-2">person_add</span> HANTAR PENDAFTARAN
                     </button>
                 </div>
@@ -170,27 +167,25 @@
     <script>
         let currentUserEmail = "";
 
-        // --- [PEMBEDAHAN CIKGU AI] INTEGRASI CLOUD PWA ---
-        // URL Web App yang dimasukkan:
-        const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbwDGf3PVIGvtXUsxguv5DuPzfdh3IAYyWaELMIlHLQXHnMIUOA8JQKelLkh437HkB7sCA/exec";
+        // URL Web App
+        const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycby4BPUx73YXijdcB77GnmYG5ap-wPeTOa10A1B_D2kgZBe0RwnDjmqOcnGtrLk0bIcufg/exec";
 
         if (typeof google === 'undefined' || typeof google.script === 'undefined') {
-            console.log("Mode PWA/Browser dikesan. Menyambung ke: " + CLOUD_API_URL);
-            
             const runCloud = (funcName, args, callback) => {
-                const formData = new FormData();
-                formData.append('action', funcName);
-                formData.append('args', JSON.stringify(args)); // Menghantar args sebagai JSON string
+                const params = new URLSearchParams();
+                params.append('action', funcName);
+                params.append('args', JSON.stringify(args));
                 
                 fetch(CLOUD_API_URL, {
                     method: 'POST',
-                    body: formData
+                    body: params,
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
                 })
                 .then(res => res.json())
                 .then(data => callback(data))
                 .catch(err => {
-                    console.error("Ralat Sambungan Cloud:", err);
-                    alert("Gagal menyambung ke server. Sila pastikan anda online dan App Script mempunyai fungsi doPost.");
+                    showLoading(false);
+                    alert("Ralat Sambungan! Pastikan Web App sudah di-Deploy sebagai 'Anyone'.");
                 });
             };
 
@@ -207,7 +202,6 @@
                 }
             }}};
         }
-        // ----------------------------------------------------
 
         function showLoading(v) { document.getElementById('loading').style.display = v ? 'flex' : 'none'; }
 
@@ -216,54 +210,55 @@
             const fS = document.getElementById('formSignup');
             const tL = document.getElementById('tabLogin');
             const tS = document.getElementById('tabSignup');
-
             if(mode === 'login') {
-                fL.classList.remove('hidden');
-                fS.classList.add('hidden');
+                fL.classList.remove('hidden'); fS.classList.add('hidden');
                 tL.className = "text-indigo-900 font-bold border-b-2 border-indigo-900 pb-2 transition";
                 tS.className = "text-gray-400 font-bold border-b-2 border-transparent pb-2 transition hover:text-indigo-600";
             } else {
-                fL.classList.add('hidden');
-                fS.classList.remove('hidden');
+                fL.classList.add('hidden'); fS.classList.remove('hidden');
                 tS.className = "text-indigo-900 font-bold border-b-2 border-indigo-900 pb-2 transition";
                 tL.className = "text-gray-400 font-bold border-b-2 border-transparent pb-2 transition hover:text-indigo-600";
             }
         }
 
+        // --- KEMASKINI PENDAFTARAN SAHAJA ---
         function handleSignup() {
-            const name = document.getElementById('regName').value;
-            const email = document.getElementById('regEmail').value;
-            const pass = document.getElementById('regPass').value;
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const pass = document.getElementById('regPass').value.trim();
             
-            if(!name || !email || !pass) return alert("Sila lengkapkan semua butiran termasuk kata laluan.");
-            if(!email.includes('@')) return alert("Sila masukkan format emel yang sah.");
+            if(!name || !email || !pass) return alert("Borang tak lengkap! Sila isi semua.");
+            if(!email.includes('@gmail.com')) return alert("Gunakan emel Gmail yang sah.");
 
             showLoading(true);
-            // Hantar data ke backend (Sheet 'user')
+            document.getElementById('btnReg').disabled = true;
+
             google.script.run.withSuccessHandler(res => {
                 showLoading(false);
+                document.getElementById('btnReg').disabled = false;
                 alert(res);
+                
+                // Jika berjaya, cuci form & balik ke tab login
+                document.getElementById('regName').value = "";
+                document.getElementById('regEmail').value = "";
+                document.getElementById('regPass').value = "";
                 toggleAuthMode('login');
+                
             }).registerUserToDrive({ name, email, pass });
         }
+        // ------------------------------------
 
         function handleLogin() {
             const email = document.getElementById('loginEmail').value;
             const pass = document.getElementById('loginPass').value;
-            
             if(!email || !pass) return alert("Sila masukkan emel dan kata laluan.");
-
             showLoading(true);
             google.script.run.withSuccessHandler(res => {
                 showLoading(false);
-                if(!res.found) return alert("Login Gagal! Emel/Password salah atau tiada dalam rekod.");
-                
-                // Simpan emel user semasa
+                if(!res.found) return alert("Login Gagal! Rekod tidak ditemui.");
                 currentUserEmail = res.email;
-                
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('logoutBtn').classList.remove('hidden');
-
                 if(res.role === "ADMIN_KUMPULAN") {
                     document.getElementById('penyemakPanel').classList.add('active-tab');
                     document.getElementById('groupNameLabel').innerText = res.group;
@@ -282,9 +277,7 @@
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('masterAdminPanel').classList.add('active-tab');
                 document.getElementById('logoutBtn').classList.remove('hidden');
-            } else {
-                alert("Akses Ditolak!");
-            }
+            } else { alert("Akses Ditolak!"); }
         }
 
         function loadWeekDropdown() {
@@ -299,7 +292,6 @@
             const week = document.getElementById('weekSelect').value;
             const fileInput = document.getElementById('rphFileInput');
             if(!week || fileInput.files.length === 0) return alert("Sila lengkapkan pilihan!");
-
             showLoading(true);
             const file = fileInput.files[0];
             const reader = new FileReader();
@@ -309,7 +301,7 @@
                     mimeType: file.type,
                     fileName: file.name,
                     week: week,
-                    email: currentUserEmail // Hantar emel untuk penamaan fail
+                    email: currentUserEmail
                 };
                 google.script.run.withSuccessHandler(res => {
                     showLoading(false);
@@ -335,9 +327,7 @@
             const gn = document.getElementById('mGroupName').value;
             const ae = document.getElementById('mAdminEmail').value;
             const mem = document.getElementById('mMemberEmails').value;
-            
-            if(!gn || !ae || !mem) return alert("Isi semua info termasuk senarai guru!");
-            
+            if(!gn || !ae || !mem) return alert("Isi semua info!");
             showLoading(true);
             google.script.run.withSuccessHandler(res => {
                 showLoading(false);
