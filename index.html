@@ -6,7 +6,6 @@
     <title>Sistem eRPH PWA</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase removed to use local simulation logic as requested -->
     <style>
         .hidden { display: none; }
     </style>
@@ -14,49 +13,51 @@
 <body class="bg-gray-100 font-sans">
 
     <nav class="bg-blue-800 text-white p-4 flex justify-between items-center shadow-lg">
-        <h1 class="font-bold text-xl">Sistem eRPH</h1>
-        <button id="logoutBtn" class="hidden bg-red-500 px-4 py-2 rounded text-sm" onclick="app.logout()">Log Keluar</button>
+        <h1 class="font-bold text-xl">Sistem eRPH 3.1</h1>
+        <button id="logoutBtn" onclick="app.logout()" class="hidden bg-red-500 px-4 py-2 rounded text-sm">Log Keluar</button>
     </nav>
 
     <div class="container mx-auto p-6">
         
         <div id="loginSection" class="bg-white p-8 rounded-lg shadow-md text-center max-w-md mx-auto mt-20">
             <h2 class="text-2xl font-bold mb-6">Selamat Datang</h2>
-            <p class="mb-6 text-gray-600">Sila log masuk untuk mengakses kumpulan RPH anda.</p>
+            <p class="mb-6 text-gray-600">Sila log masuk menggunakan emel Gmail sekolah/peribadi anda.</p>
             <button onclick="app.login()" class="bg-white border border-gray-300 flex items-center justify-center w-full py-2 rounded-lg hover:bg-gray-50 transition">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6 mr-2">
-                Log Masuk (Simulasi)
+                Log Masuk dengan Google
             </button>
+            <button onclick="app.adminLogin()" class="mt-4 text-blue-600 text-sm hover:underline font-semibold block w-full">
+                Log Masuk Admin (Pentadbir)
+            </button>
+            <p class="mt-4 text-xs text-gray-400">Sistem sedang berjalan dalam mod simulasi (Tiada Firebase).</p>
         </div>
 
-        <!-- Dashboard Container -->
         <div id="dashboard" class="hidden space-y-6">
             
-            <!-- System Admin Panel -->
-            <div id="sysAdminPanel" class="hidden bg-white p-6 rounded-lg shadow border-l-4 border-purple-600">
-                <h2 class="text-xl font-bold mb-4">Panel Admin Sistem</h2>
-                <div class="flex gap-2 mb-4">
-                    <input type="text" id="newGroupName" placeholder="Nama Kumpulan Baru" class="border p-2 rounded flex-grow">
-                    <input type="email" id="newGroupAdmin" placeholder="Emel Admin Kumpulan" class="border p-2 rounded flex-grow">
-                    <button onclick="app.createGroup()" class="bg-purple-600 text-white px-4 py-2 rounded">Bina Kumpulan</button>
+            <!-- Panel Admin System -->
+            <div id="sysAdminPanel" class="hidden bg-white p-6 rounded-lg shadow border-l-4 border-blue-600">
+                <h2 class="text-xl font-bold mb-4">Panel Pentadbir</h2>
+                <div class="flex gap-2 flex-col md:flex-row mb-4">
+                    <input type="text" id="newGroupName" placeholder="Nama Kumpulan Baru" class="border p-2 rounded w-full">
+                    <input type="email" id="newGroupAdmin" placeholder="Emel Admin Kumpulan" class="border p-2 rounded w-full">
+                    <button onclick="app.createGroup()" class="bg-blue-600 text-white px-4 py-2 rounded whitespace-nowrap">Daftar Kumpulan</button>
+                </div>
+                <div class="border-t pt-4">
+                    <label class="text-xs font-bold text-gray-700 block mb-1">Pautan Google Drive Master:</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="driveLinkInput" placeholder="https://drive.google.com/..." class="border p-2 rounded w-full text-sm">
+                        <button onclick="app.updateDriveLink()" class="bg-green-600 text-white px-4 py-2 rounded text-sm whitespace-nowrap">Simpan Link</button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Groups Display Area -->
-            <div id="groupsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Group Cards will be injected here -->
-            </div>
+            <!-- Groups Container -->
+            <div id="groupsContainer" class="grid grid-cols-1 gap-6"></div>
 
         </div>
 
     </div>
 
     <script src="appScripts.js"></script>
-    <script>
-        // Initialize App
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log("App sedia.");
-        });
-    </script>
 </body>
 </html>
