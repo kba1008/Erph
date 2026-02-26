@@ -6,11 +6,13 @@
     <title>eRPH Cloud 551</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
     <style>
         .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); display: none; justify-content: center; align-items: center; z-index: 9999; }
         .tab-content { display: none; }
         .active-tab { display: block; }
         .btn-grad { background: linear-gradient(to right, #1e3a8a, #3b82f6); }
+        canvas { cursor: crosshair; touch-action: none; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -22,13 +24,34 @@
         </div>
     </div>
 
+    <!-- Review Modal (Canvas) -->
+    <div id="reviewModal" class="fixed inset-0 bg-black bg-opacity-95 hidden z-[100] flex flex-col">
+        <div class="flex justify-between items-center text-white p-4 bg-gray-900 border-b border-gray-700">
+            <span class="font-bold flex items-center"><span class="material-icons mr-2">draw</span>Mod Semakan</span>
+            <div class="space-x-2 flex">
+                <button onclick="clearCanvas()" class="text-yellow-400 border border-yellow-400 px-3 py-1 rounded text-xs">PADAM</button>
+                <button onclick="saveAnnotation()" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold shadow">SIMPAN</button>
+                <button onclick="closeReview()" class="text-red-500 font-bold text-xl ml-4">&times;</button>
+            </div>
+        </div>
+        <div class="flex-1 relative overflow-auto flex justify-center items-start bg-gray-800 p-4" id="canvasContainer">
+            <div class="relative bg-white shadow-2xl" id="reviewWrapper">
+                <img id="reviewImage" class="max-w-full h-auto block" alt="Dokumen RPH" />
+                <canvas id="reviewCanvas" class="absolute top-0 left-0 w-full h-full"></canvas>
+            </div>
+        </div>
+        <div class="bg-gray-900 p-2 text-center">
+             <input type="color" id="penColor" value="#ff0000" class="bg-transparent border-0 w-8 h-8 cursor-pointer">
+        </div>
+    </div>
+
     <nav class="bg-indigo-900 text-white shadow-lg sticky top-0 z-50">
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <span class="material-icons">cloud_done</span>
                 <span class="font-black text-lg tracking-tighter uppercase">eRPH Cloud 551</span>
             </div>
-            <button id="logoutBtn" onclick="location.reload()" class="hidden bg-red-500 p-2 rounded-full"><span class="material-icons text-sm">power_settings_new</span></button>
+            <button id="logoutBtn" onclick="location.reload()" class="hidden bg-red-500 p-2 rounded-full hover:bg-red-600 transition"><span class="material-icons text-sm">power_settings_new</span></button>
         </div>
     </nav>
 
@@ -41,51 +64,82 @@
             </div>
 
             <div id="formLogin">
-                <input type="email" id="loginEmail" placeholder="Emel" class="w-full bg-gray-50 border p-3 rounded-xl mb-3 outline-none">
-                <input type="password" id="loginPass" placeholder="Kata Laluan" class="w-full bg-gray-50 border p-3 rounded-xl mb-6 outline-none">
-                <button onclick="handleLogin()" class="w-full btn-grad text-white py-3 rounded-2xl font-black shadow-lg">MASUK</button>
-                <button onclick="accessMasterAdmin()" class="mt-4 text-[10px] text-gray-400 block w-full">AKSES MASTER ADMIN</button>
+                <input type="email" id="loginEmail" placeholder="Emel" class="w-full bg-gray-50 border p-3 rounded-xl mb-3 outline-none focus:ring-2 focus:ring-indigo-200">
+                <input type="password" id="loginPass" placeholder="Kata Laluan" class="w-full bg-gray-50 border p-3 rounded-xl mb-6 outline-none focus:ring-2 focus:ring-indigo-200">
+                <button onclick="handleLogin()" class="w-full btn-grad text-white py-3 rounded-2xl font-black shadow-lg hover:shadow-xl transition transform hover:scale-[1.02]">
+MASUK</button>
+                <button onclick="accessMasterAdmin()" class="mt-4 text-[10px] text-gray-400 block w-full hover:text-indigo-600">AKSES MASTER ADMIN</button>
             </div>
 
             <div id="formSignup" class="hidden text-left space-y-4">
                 <input type="text" id="regName" placeholder="Nama Penuh" class="w-full bg-gray-50 border p-3 rounded-xl outline-none">
                 <input type="email" id="regEmail" placeholder="Emel Gmail" class="w-full bg-gray-50 border p-3 rounded-xl outline-none">
                 <input type="password" id="regPass" placeholder="Cipta Password" class="w-full bg-gray-50 border p-3 rounded-xl outline-none">
-                <button onclick="handleSignup()" class="w-full bg-gray-800 text-white py-3 rounded-2xl font-bold">HANTAR PENDAFTARAN</button>
+                <button onclick="handleSignup()" class="w-full bg-gray-800 text-white py-3 rounded-2xl font-bold hover:bg-gray-900">HANTAR PENDAFTARAN</button>
             </div>
         </div>
 
+        <!-- GURU PANEL -->
         <div id="guruPanel" class="tab-content bg-white p-6 rounded-3xl shadow-sm border mt-4">
             <h2 class="text-xl font-bold text-indigo-900">Penghantaran RPH</h2>
             <p class="text-xs text-gray-500 mb-4">Kumpulan: <span id="guruGroupInfo" class="font-bold text-indigo-600">-</span></p>
             <div class="space-y-4">
-                <select id="weekSelect" class="w-full bg-gray-50 border-2 p-4 rounded-2xl outline-none"></select>
-                <div class="border-2 border-dashed p-10 rounded-3xl text-center relative">
+                <label class="text-xs font-bold text-gray-400">Pilih Minggu:</label>
+                <select id="weekSelect" onchange="loadTeacherFiles()" class="w-full bg-gray-50 border-2 p-4 rounded-2xl outline-none focus:border-indigo-500 transition"></select>
+                
+                <div class="border-2 border-dashed border-indigo-200 p-8 rounded-3xl text-center relative hover:bg-indigo-50 transition">
                     <input type="file" id="rphFileInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                    <div id="uploadPlaceholder"><span class="material-icons text-4xl text-gray-300">file_upload</span><p class="text-sm text-gray-500">Pilih Fail RPH</p></div>
+                    <div id="uploadPlaceholder">
+                        <span class="material-icons text-4xl text-indigo-300">cloud_upload</span>
+                        <p class="text-sm text-gray-500 font-medium">Klik untuk Pilih PDF/Gambar</p>
+                    </div>
                 </div>
-                <button onclick="handleFileUpload()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold">HANTAR RPH</button>
+                <button onclick="handleFileUpload()" class="w-full bg-indigo-600 text-white py-3 rounded-2xl font-bold shadow-md hover:bg-indigo-700">HANTAR RPH</button>
+            </div>
+
+            <!-- Teacher File List -->
+            <div id="teacherFilesContainer" class="mt-6 hidden">
+                <h3 class="text-sm font-bold text-gray-700 mb-2">Fail Saya (Minggu Ini)</h3>
+                <div id="teacherFileList" class="space-y-2"></div>
             </div>
         </div>
 
+        <!-- PENYEMAK (ADMIN) PANEL -->
         <div id="penyemakPanel" class="tab-content bg-white p-6 rounded-3xl shadow-sm border mt-4">
-            <div class="flex justify-between items-center mb-6">
+            <div class="flex justify-between items-center mb-4">
                 <div>
                     <p class="text-[10px] font-bold text-indigo-500 uppercase">Penyemak Kumpulan</p>
                     <h2 id="groupNameLabel" class="text-2xl font-black text-gray-800">-</h2>
                 </div>
-                <button onclick="createNewWeek()" class="bg-indigo-600 text-white p-3 rounded-2xl shadow-md"><span class="material-icons">add</span></button>
+                <button onclick="createNewWeek()" class="bg-indigo-600 text-white p-3 rounded-2xl shadow-md hover:bg-indigo-700 tooltip" title="Cipta Folder Minggu Baru"><span class="material-icons">create_new_folder</span></button>
             </div>
-            <div class="bg-gray-50 p-4 rounded-2xl italic text-xs text-gray-500">Nota: Klik butang (+) untuk buka minggu penghantaran baru.</div>
+            
+            <div class="bg-indigo-50 p-4 rounded-2xl mb-6">
+                <label class="text-xs font-bold text-indigo-800 block mb-1">Pilih Minggu Semakan:</label>
+                <select id="adminWeekSelect" onchange="loadGroupSubmissions()" class="w-full bg-white border border-indigo-100 p-3 rounded-xl outline-none text-sm font-semibold text-indigo-900"></select>
+            </div>
+
+            <div id="adminReviewSection">
+                <h3 class="font-bold text-gray-700 border-b pb-2 mb-3">Senarai RPH Guru</h3>
+                <div id="submissionList" class="space-y-3">
+                    <p class="text-center text-gray-400 text-sm italic py-4">Sila pilih minggu untuk melihat RPH.</p>
+                </div>
+            </div>
         </div>
 
+        <!-- MASTER ADMIN PANEL -->
         <div id="masterAdminPanel" class="tab-content bg-gray-900 p-8 rounded-3xl text-white mt-4">
-            <h2 class="text-xl font-bold text-red-500 flex items-center mb-6"><span class="material-icons mr-2">admin_panel_settings</span> MASTER ADMIN</h2>
-            <div class="space-y-3">
-                <input type="text" id="mGroupName" placeholder="Nama Kumpulan Semakan" class="w-full bg-gray-800 p-4 rounded-xl text-sm border-none">
-                <input type="email" id="mAdminEmail" placeholder="Emel Admin Kumpulan" class="w-full bg-gray-800 p-4 rounded-xl text-sm border-none">
-                <textarea id="mMemberEmails" placeholder="Emel Ahli (Asingkan dengan koma)" class="w-full bg-gray-800 p-4 rounded-xl text-sm h-24 border-none"></textarea>
-                <button onclick="addNewGroup()" class="w-full bg-red-600 py-4 rounded-xl font-bold">DAFTAR KUMPULAN & TAG AHLI</button>
+            <h2 class="text-xl font-bold text-red-500 flex items-center mb-6">
+                <span class="material-icons mr-2">admin_panel_settings</span> MASTER ADMIN
+            </h2>
+            <div class="space-y-4">
+                <input type="text" id="mGroupName" placeholder="Nama Kumpulan Semakan" class="w-full bg-gray-800 p-4 rounded-xl text-sm border border-gray-700 focus:border-red-500 outline-none">
+                <div>
+                    <label class="text-[10px] text-gray-400 ml-2">Emel Admin (Boleh lebih dari 1, asingkan dengan koma):</label>
+                    <input type="text" id="mAdminEmail" placeholder="contoh: admin1@sk.com, admin2@sk.com" class="w-full bg-gray-800 p-4 rounded-xl text-sm border border-gray-700 focus:border-red-500 outline-none">
+                </div>
+                <textarea id="mMemberEmails" placeholder="Emel Ahli (Asingkan dengan koma)" class="w-full bg-gray-800 p-4 rounded-xl text-sm h-24 border border-gray-700 focus:border-red-500 outline-none"></textarea>
+                <button onclick="addNewGroup()" class="w-full bg-gradient-to-r from-red-600 to-red-800 py-4 rounded-xl font-bold hover:shadow-lg">DAFTAR KUMPULAN</button>
             </div>
             <div id="adminGroupList" class="mt-8 space-y-3"></div>
         </div>
@@ -94,6 +148,8 @@
 
     <script>
         let currentUserEmail = "";
+        // Canvas Variables
+        let canvas, ctx, isDrawing = false;
         const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbyFJGkL56NVT2cwSR3r7cuQdSPzbF4Bf5qDnk2Lem9_FH1HXCqHhBZtRXbVlcJLd6Q33A/exec";
 
         function runCloud(action, args, callback) {
@@ -118,14 +174,15 @@
             showLoading(true);
             runCloud('verifyUserLogin', [e, p], res => {
                 showLoading(false);
-                if(!res.found) return alert("Login Gagal!");
+                if(!res.found) return alert("Login Gagal! Emel atau katalaluan salah.");
                 currentUserEmail = res.email;
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('logoutBtn').classList.remove('hidden');
                 
-                if(res.role === "ADMIN_KUMPULAN") {
+                if(res.role === "ADMIN_KUMPULAN" || (res.roles && res.roles.includes("ADMIN_KUMPULAN"))) {
                     document.getElementById('penyemakPanel').classList.add('active-tab');
                     document.getElementById('groupNameLabel').innerText = res.group;
+                    loadAdminWeekDropdown();
                 } else {
                     document.getElementById('guruPanel').classList.add('active-tab');
                     document.getElementById('guruGroupInfo').innerText = res.group || "Tiada Kumpulan";
@@ -145,7 +202,7 @@
 
         function addNewGroup() {
             const gn = document.getElementById('mGroupName').value;
-            const ae = document.getElementById('mAdminEmail').value;
+            const ae = document.getElementById('mAdminEmail').value; // Accepts comma separated
             const mem = document.getElementById('mMemberEmails').value;
             if(!gn || !ae || !mem) return alert("Lengkapkan maklumat!");
             showLoading(true);
@@ -164,26 +221,37 @@
                     cont.innerHTML += `<div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
                         <h4 class="font-bold text-indigo-400">${g.name}</h4>
                         <p class="text-[10px] text-gray-400">Admin: ${g.admin}</p>
-                        <p class="text-[9px] text-gray-500 italic mt-1">${g.members}</p>
+                        <p class="text-[9px] text-gray-500 italic mt-1">Ahli: ${g.members}</p>
                     </div>`;
                 });
             });
         }
 
         function createNewWeek() {
-            const name = prompt("Nama Minggu (Cth: MINGGU 1):");
+            const name = prompt("Nama Minggu Baru (Cth: MINGGU 1):");
             if(!name) return;
             showLoading(true);
             runCloud('backendCreateFolder', [name, currentUserEmail], res => {
                 showLoading(false);
                 alert(res);
+                loadAdminWeekDropdown(); // Refresh dropdown
             });
         }
 
+        // Teacher Dropdown
         function loadWeekDropdown() {
             runCloud('getAvailableWeeks', [currentUserEmail], weeks => {
                 const el = document.getElementById('weekSelect');
                 el.innerHTML = '<option value="">-- Pilih Minggu --</option>';
+                weeks.forEach(w => el.innerHTML += `<option value="${w}">${w}</option>`);
+            });
+        }
+
+        // Admin Dropdown
+        function loadAdminWeekDropdown() {
+            runCloud('getAvailableWeeks', [currentUserEmail], weeks => {
+                const el = document.getElementById('adminWeekSelect');
+                el.innerHTML = '<option value="">-- Pilih Minggu Semakan --</option>';
                 weeks.forEach(w => el.innerHTML += `<option value="${w}">${w}</option>`);
             });
         }
@@ -200,15 +268,185 @@
                 runCloud('backendUpload', [payload], res => {
                     showLoading(false);
                     alert("RPH Berjaya Dihantar!");
-                    location.reload();
+                    document.getElementById('rphFileInput').value = "";
+                    document.getElementById('uploadPlaceholder').innerHTML = `<span class="material-icons text-4xl text-indigo-300">cloud_upload</span><p class="text-sm text-gray-500">Klik untuk Pilih PDF/Gambar</p>`;
+                    loadTeacherFiles(); // Refresh list
                 });
             };
             reader.readAsDataURL(file);
         }
 
         document.getElementById('rphFileInput').onchange = function() {
-            if(this.files[0]) document.getElementById('uploadPlaceholder').innerHTML = `<p class='text-green-500 font-bold'>${this.files[0].name}</p>`;
+            if(this.files[0]) document.getElementById('uploadPlaceholder').innerHTML = `<p class='text-green-600 font-bold'>${this.files[0].name}</p>`;
         };
+
+        // --- NEW: Load Teacher's Own Files for Deletion ---
+        function loadTeacherFiles() {
+            const week = document.getElementById('weekSelect').value;
+            if(!week) return;
+            const cont = document.getElementById('teacherFileList');
+            const wrap = document.getElementById('teacherFilesContainer');
+            wrap.classList.remove('hidden');
+            cont.innerHTML = '<p class="text-xs text-gray-400 animate-pulse">Memuatkan fail...</p>';
+            
+            runCloud('getTeacherFiles', [currentUserEmail, week], files => {
+                cont.innerHTML = "";
+                if(files.length === 0) cont.innerHTML = '<p class="text-xs italic text-gray-400">Tiada fail dihantar.</p>';
+                files.forEach(f => {
+                    cont.innerHTML += `
+                    <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg border">
+                        <div class="overflow-hidden">
+                            <p class="text-sm font-bold text-gray-700 truncate">${f.name}</p>
+                            <p class="text-[10px] text-gray-500">${f.date}</p>
+                        </div>
+                        <button onclick="deleteFile('${f.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded"><span class="material-icons text-lg">delete</span></button>
+                    </div>`;
+                });
+            });
+        }
+
+        function deleteFile(fileId) {
+            if(confirm("Padam RPH ini? Guru perlu muat naik semula.")) {
+                showLoading(true);
+                runCloud('deleteFile', [fileId], res => {
+                    showLoading(false);
+                    alert("Fail dipadam.");
+                    loadTeacherFiles();
+                });
+            }
+        }
+
+        // --- NEW: Admin Review Logic ---
+        function loadGroupSubmissions() {
+            const week = document.getElementById('adminWeekSelect').value;
+            if(!week) return;
+            const cont = document.getElementById('submissionList');
+            cont.innerHTML = '<div class="flex justify-center"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-600"></div></div>';
+            
+            runCloud('getGroupSubmissions', [currentUserEmail, week], subs => {
+                cont.innerHTML = "";
+                if(subs.length === 0) cont.innerHTML = '<p class="text-center text-gray-500 italic">Tiada penghantaran RPH.</p>';
+                subs.forEach(s => {
+                    cont.innerHTML += `
+                    <div class="bg-white border hover:border-indigo-400 p-4 rounded-xl shadow-sm transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-bold text-indigo-900">${s.teacherName || s.email}</p>
+                                <p class="text-xs text-gray-500">${s.fileName}</p>
+                            </div>
+                            <span class="text-[10px] bg-gray-100 px-2 py-1 rounded text-gray-600">${s.date}</span>
+                        </div>
+                        <div class="mt-3 flex space-x-2">
+                            <button onclick="window.open('${s.url}', '_blank')" class="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-xs font-bold">LIHAT FAIL</button>
+                            <button onclick="openReview('${s.url}', '${s.id}', '${s.fileName}')" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-xs font-bold flex justify-center items-center"><span class="material-icons text-xs mr-1">edit</span> SEMAK (CONTENG)</button>
+                        </div>
+                    </div>`;
+                });
+            });
+        }
+
+        // --- NEW: Annotation/Review Modal Logic ---
+        let currentFileId = null;
+
+        function openReview(url, id, name) {
+            // Nota: Conteng terus ke atas PDF sebenar memerlukan library berat (PDF.js).
+            // Solusi PWA Ringan: Kita paparkan imej (jika imej) atau placeholder jika PDF.
+            // Admin conteng di atas canvas transparent.
+            
+            currentFileId = id;
+            const modal = document.getElementById('reviewModal');
+            const img = document.getElementById('reviewImage');
+            
+            modal.classList.remove('hidden');
+            // Detect if image
+            if(name.match(/\.(jpeg|jpg|png|gif)$/i)) {
+                img.src = url;
+            } else {
+                // If PDF, we show a placeholder for canvas drawing context
+                img.src = "https://via.placeholder.com/800x1100/eeeeee/000000?text=Paparan+PDF+(Sila+Rujuk+Tab+Sebelah)+-+Ruang+Conteng";
+                window.open(url, '_blank'); // Open PDF in new tab for reference
+            }
+
+            initCanvas();
+        }
+
+        function closeReview() {
+            document.getElementById('reviewModal').classList.add('hidden');
+        }
+
+        function initCanvas() {
+            canvas = document.getElementById('reviewCanvas');
+            ctx = canvas.getContext('2d');
+            const img = document.getElementById('reviewImage');
+            
+            // Resize canvas to match image when loaded
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            };
+            // Fallback if cached
+            if(img.complete) {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // Event Listeners
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', endDraw);
+            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e.touches[0]); });
+            canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); });
+            canvas.addEventListener('touchend', endDraw);
+        }
+
+        function startDraw(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            // Calculate scale if CSS size differs from attribute size
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = document.getElementById('penColor').value;
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        function endDraw() {
+            isDrawing = false;
+            ctx.beginPath();
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function saveAnnotation() {
+            if(!currentFileId) return;
+            showLoading(true);
+            const dataURL = canvas.toDataURL('image/png');
+            const base64 = dataURL.split(',')[1];
+            
+            runCloud('saveAnnotation', [{ fileId: currentFileId, image: base64, admin: currentUserEmail }], res => {
+                showLoading(false);
+                alert("Semakan (Contengan) disimpan!");
+                closeReview();
+            });
+        }
 
         function handleSignup() {
             const n = document.getElementById('regName').value;
@@ -221,6 +459,15 @@
                 toggleAuthMode('login');
             });
         }
+    </script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('service-worker.js')
+            .then(reg => console.log('Service Worker Berjaya!'))
+            .catch(err => console.log('Service Worker Gagal!', err));
+        });
+      }
     </script>
 </body>
 </html>
