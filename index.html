@@ -6,8 +6,7 @@
     <title>Sistem eRPH PWA</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-auth-compat.js"></script>
+    <!-- Firebase removed to use local simulation logic as requested -->
     <style>
         .hidden { display: none; }
     </style>
@@ -16,122 +15,48 @@
 
     <nav class="bg-blue-800 text-white p-4 flex justify-between items-center shadow-lg">
         <h1 class="font-bold text-xl">Sistem eRPH</h1>
-        <button id="logoutBtn" class="hidden bg-red-500 px-4 py-2 rounded text-sm">Log Keluar</button>
+        <button id="logoutBtn" class="hidden bg-red-500 px-4 py-2 rounded text-sm" onclick="app.logout()">Log Keluar</button>
     </nav>
 
     <div class="container mx-auto p-6">
         
         <div id="loginSection" class="bg-white p-8 rounded-lg shadow-md text-center max-w-md mx-auto mt-20">
             <h2 class="text-2xl font-bold mb-6">Selamat Datang</h2>
-            <p class="mb-6 text-gray-600">Sila log masuk menggunakan emel Gmail sekolah/peribadi anda.</p>
-            <button id="loginBtn" class="bg-white border border-gray-300 flex items-center justify-center w-full py-2 rounded-lg hover:bg-gray-50 transition">
+            <p class="mb-6 text-gray-600">Sila log masuk untuk mengakses kumpulan RPH anda.</p>
+            <button onclick="app.login()" class="bg-white border border-gray-300 flex items-center justify-center w-full py-2 rounded-lg hover:bg-gray-50 transition">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6 mr-2">
-                Log Masuk dengan Google
+                Log Masuk (Simulasi)
             </button>
-            <div class="mt-4">
-                <button onclick="checkAdmin()" class="text-xs text-gray-400">Admin Login</button>
-            </div>
         </div>
 
-        <div id="guruSection" class="hidden space-y-6">
-            <div class="bg-white p-6 rounded-lg shadow">
-                <h2 class="text-xl font-bold mb-4 border-b pb-2">Hantar RPH Mingguan</h2>
-                <form id="uploadForm">
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-1">Pilih Fail (PDF/DOCX)</label>
-                        <input type="file" id="rphFile" accept=".pdf,.docx" class="w-full border p-2 rounded" required>
-                    </div>
-                    <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">Muat Naik ke Drive</button>
-                </form>
-            </div>
-        </div>
-
-        <div id="penyemakSection" class="hidden space-y-6">
-            <div class="bg-white p-6 rounded-lg shadow">
-                <h2 class="text-xl font-bold mb-4">Senarai Guru Di Bawah Seliaan</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-200">
-                                <th class="p-3 border">Nama Guru</th>
-                                <th class="p-3 border">Fail RPH</th>
-                                <th class="p-3 border">Markah</th>
-                                <th class="p-3 border">Tindakan</th>
-                            </tr>
-                        </thead>
-                        <tbody id="guruList">
-                            </tbody>
-                    </table>
+        <!-- Dashboard Container -->
+        <div id="dashboard" class="hidden space-y-6">
+            
+            <!-- System Admin Panel -->
+            <div id="sysAdminPanel" class="hidden bg-white p-6 rounded-lg shadow border-l-4 border-purple-600">
+                <h2 class="text-xl font-bold mb-4">Panel Admin Sistem</h2>
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="newGroupName" placeholder="Nama Kumpulan Baru" class="border p-2 rounded flex-grow">
+                    <input type="email" id="newGroupAdmin" placeholder="Emel Admin Kumpulan" class="border p-2 rounded flex-grow">
+                    <button onclick="app.createGroup()" class="bg-purple-600 text-white px-4 py-2 rounded">Bina Kumpulan</button>
                 </div>
             </div>
-        </div>
 
-        <div id="adminSection" class="hidden space-y-6">
-            <div class="bg-white p-6 rounded-lg shadow">
-                <h2 class="text-xl font-bold mb-4">Konfigurasi Sistem</h2>
-                <p class="mb-4 text-sm text-gray-500">Lantik pentadbir dan agihkan guru mengikut kumpulan.</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="border p-4 rounded bg-blue-50">
-                        <h3 class="font-bold">Kumpulan GB</h3>
-                        <p class="text-xs">10 Guru</p>
-                    </div>
-                    </div>
+            <!-- Groups Display Area -->
+            <div id="groupsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Group Cards will be injected here -->
             </div>
+
         </div>
 
     </div>
 
+    <script src="appScripts.js"></script>
     <script>
-        // Konfigurasi Firebase anda
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT.appspot.com",
-            messagingSenderId: "YOUR_ID",
-            appId: "YOUR_APP_ID"
-        };
-        firebase.initializeApp(firebaseConfig);
-
-        const auth = firebase.auth();
-        const provider = new firebase.auth.GoogleAuthProvider();
-
-        // Handle Login
-        document.getElementById('loginBtn').onclick = () => {
-            auth.signInWithPopup(provider).then(result => {
-                showDashboard(result.user);
-            });
-        };
-
-        function showDashboard(user) {
-            document.getElementById('loginSection').classList.add('hidden');
-            document.getElementById('logoutBtn').classList.remove('hidden');
-            
-            // Logik Role-Based Access (Contoh ringkas)
-            // Dalam sistem sebenar, data ini ditarik dari Database
-            if (user.email === 'admin@gmail.com') {
-                document.getElementById('adminSection').classList.remove('hidden');
-            } else if (['gb@gmail.com', 'pkp@gmail.com'].includes(user.email)) {
-                document.getElementById('penyemakSection').classList.remove('hidden');
-            } else {
-                document.getElementById('guruSection').classList.remove('hidden');
-            }
-        }
-
-        function checkAdmin() {
-            const pass = prompt("Masukkan Kata Laluan Admin:");
-            if (pass === "101010") {
-                document.getElementById('loginSection').classList.add('hidden');
-                document.getElementById('adminSection').classList.remove('hidden');
-                document.getElementById('logoutBtn').classList.remove('hidden');
-            } else {
-                alert("Salah!");
-            }
-        }
-
-        document.getElementById('logoutBtn').onclick = () => {
-            auth.signOut().then(() => location.reload());
-        };
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("App sedia.");
+        });
     </script>
 </body>
 </html>
