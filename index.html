@@ -1,63 +1,138 @@
 <!DOCTYPE html>
-<html lang="ms">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem eRPH PWA</title>
-    <link rel="manifest" href="manifest.json">
+    <base target="_top">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .hidden { display: none; }
-    </style>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-slate-50 min-h-screen">
 
-    <nav class="bg-blue-800 text-white p-4 flex justify-between items-center shadow-lg">
-        <h1 class="font-bold text-xl">Sistem eRPH 3.1</h1>
-        <button id="logoutBtn" onclick="app.logout()" class="hidden bg-red-500 px-4 py-2 rounded text-sm">Log Keluar</button>
+    <nav class="bg-indigo-900 text-white p-4 shadow-md flex justify-between items-center">
+        <span class="font-bold">eRPH PWA SYSTEM</span>
+        <div id="userInfo" class="text-xs"></div>
+        <button onclick="showAdminLogin()" class="bg-indigo-700 px-3 py-1 rounded text-xs">Admin Sistem</button>
     </nav>
 
-    <div class="container mx-auto p-6">
+    <div class="container mx-auto p-4 max-w-2xl">
         
-        <div id="loginSection" class="bg-white p-8 rounded-lg shadow-md text-center max-w-md mx-auto mt-20">
-            <h2 class="text-2xl font-bold mb-6">Selamat Datang</h2>
-            <p class="mb-6 text-gray-600">Sila log masuk menggunakan emel Gmail sekolah/peribadi anda.</p>
-            <button onclick="app.login()" class="bg-white border border-gray-300 flex items-center justify-center w-full py-2 rounded-lg hover:bg-gray-50 transition">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6 mr-2">
-                Log Masuk dengan Google
+        <div id="loginPrompt" class="bg-white p-10 rounded-xl shadow-lg text-center mt-10">
+            <h2 class="text-2xl font-bold mb-4">Log Masuk</h2>
+            <p class="text-gray-500 mb-6">Sila gunakan emel Gmail anda untuk mengakses sistem.</p>
+            <button onclick="initApp()" class="bg-blue-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-blue-700 transition">
+                Masuk ke Dashboard
             </button>
-            <button onclick="app.adminLogin()" class="mt-4 text-blue-600 text-sm hover:underline font-semibold block w-full">
-                Log Masuk Admin (Pentadbir)
-            </button>
-            <p class="mt-4 text-xs text-gray-400">Sistem sedang berjalan dalam mod simulasi (Tiada Firebase).</p>
         </div>
 
-        <div id="dashboard" class="hidden space-y-6">
-            
-            <!-- Panel Admin System -->
-            <div id="sysAdminPanel" class="hidden bg-white p-6 rounded-lg shadow border-l-4 border-blue-600">
-                <h2 class="text-xl font-bold mb-4">Panel Pentadbir</h2>
-                <div class="flex gap-2 flex-col md:flex-row mb-4">
-                    <input type="text" id="newGroupName" placeholder="Nama Kumpulan Baru" class="border p-2 rounded w-full">
-                    <input type="email" id="newGroupAdmin" placeholder="Emel Admin Kumpulan" class="border p-2 rounded w-full">
-                    <button onclick="app.createGroup()" class="bg-blue-600 text-white px-4 py-2 rounded whitespace-nowrap">Daftar Kumpulan</button>
-                </div>
-                <div class="border-t pt-4">
-                    <label class="text-xs font-bold text-gray-700 block mb-1">Pautan Google Drive Master:</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="driveLinkInput" placeholder="https://drive.google.com/..." class="border p-2 rounded w-full text-sm">
-                        <button onclick="app.updateDriveLink()" class="bg-green-600 text-white px-4 py-2 rounded text-sm whitespace-nowrap">Simpan Link</button>
-                    </div>
+        <div id="guruPanel" class="hidden space-y-4">
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="font-bold text-lg mb-4 text-indigo-800">Hantar RPH Saya</h3>
+                <label class="block text-sm mb-2">Pilih Minggu:</label>
+                <select id="weekSelect" class="w-full border p-2 rounded mb-4"></select>
+                
+                <label class="block text-sm mb-2">Fail RPH (PDF/DOCX):</label>
+                <input type="file" id="rphFile" class="w-full mb-4">
+                
+                <button onclick="handleUpload()" id="upBtn" class="w-full bg-green-600 text-white py-2 rounded font-bold">MUAT NAIK</button>
+            </div>
+        </div>
+
+        <div id="groupAdminPanel" class="hidden space-y-4">
+            <div class="bg-indigo-100 p-4 rounded-lg flex justify-between items-center">
+                <span class="font-bold text-indigo-800">Panel Penyemak: <span id="groupTitle"></span></span>
+                <button onclick="addWeek()" class="bg-indigo-600 text-white text-xs px-3 py-2 rounded">+ Minggu Baru</button>
+            </div>
+            <div id="guruList" class="bg-white p-4 rounded-lg shadow">
+                <p class="text-gray-400 text-center italic">Memuatkan senarai guru...</p>
+            </div>
+        </div>
+
+        <div id="systemAdminPanel" class="hidden bg-white p-6 rounded-lg shadow mt-5">
+            <h2 class="font-bold text-xl border-b pb-2 mb-4">Kawalan Sistem</h2>
+            <div class="grid grid-cols-1 gap-4">
+                <div class="border p-4 rounded">
+                    <h3 class="font-semibold text-sm mb-2 italic">Tambah Kumpulan & Admin</h3>
+                    <input type="text" id="newGroupName" placeholder="Nama Kumpulan (Cth: PKP)" class="w-full border p-2 mb-2 text-sm">
+                    <input type="email" id="newGroupAdmin" placeholder="Emel Admin Kumpulan" class="w-full border p-2 mb-2 text-sm">
+                    <button class="bg-black text-white w-full py-1 rounded">Daftar Admin</button>
                 </div>
             </div>
-
-            <!-- Groups Container -->
-            <div id="groupsContainer" class="grid grid-cols-1 gap-6"></div>
-
         </div>
 
     </div>
 
-    <script src="appScripts.js"></script>
+    <script>
+        let currentUserEmail = ""; 
+        let userRole = "";
+
+        function initApp() {
+            // Nota: Dalam persekitaran Apps Script sebenar, kita guna google.script.run
+            // Untuk demo ini, kita simulasi fungsi log masuk
+            google.script.run.withSuccessHandler(setupUI).getUserEmail();
+        }
+
+        function setupUI(email) {
+            currentUserEmail = email;
+            document.getElementById('loginPrompt').classList.add('hidden');
+            document.getElementById('userInfo').innerText = "Log: " + email;
+
+            google.script.run.withSuccessHandler(data => {
+                userRole = data.role;
+                if(data.role === "GROUP_ADMIN") {
+                    document.getElementById('groupAdminPanel').classList.remove('hidden');
+                    document.getElementById('groupTitle').innerText = data.group;
+                } else if(data.role === "GURU") {
+                    document.getElementById('guruPanel').classList.remove('hidden');
+                } else {
+                    alert("Emel anda belum didaftarkan dalam sistem. Sila hubungi Admin.");
+                }
+            }).getUserData(email);
+        }
+
+        function showAdminLogin() {
+            const pass = prompt("Masukkan Kata Laluan Admin Sistem:");
+            if(pass === "101010") {
+                document.getElementById('loginPrompt').classList.add('hidden');
+                document.getElementById('guruPanel').classList.add('hidden');
+                document.getElementById('groupAdminPanel').classList.add('hidden');
+                document.getElementById('systemAdminPanel').classList.remove('hidden');
+            } else {
+                alert("Kata laluan salah!");
+            }
+        }
+
+        function addWeek() {
+            const week = prompt("Masukkan Nama Minggu (Cth: MINGGU 1):");
+            if(week) {
+                google.script.run.withSuccessHandler(msg => alert(msg)).createWeeklyFolder(week);
+            }
+        }
+
+        function handleUpload() {
+            const fileInput = document.getElementById('rphFile');
+            const week = document.getElementById('weekSelect').value;
+            const btn = document.getElementById('upBtn');
+            
+            if(fileInput.files.length === 0) return alert("Sila pilih fail!");
+            
+            btn.innerText = "Sila Tunggu...";
+            btn.disabled = true;
+
+            const file = fileInput.files[0];
+            const fr = new FileReader();
+            fr.onload = function(e) {
+                const fileData = {
+                    data: e.target.result.split(',')[1],
+                    mimeType: file.type,
+                    fileName: file.name
+                };
+                google.script.run.withSuccessHandler(url => {
+                    alert("Berjaya! Fail disimpan di Drive.");
+                    btn.innerText = "MUAT NAIK";
+                    btn.disabled = false;
+                }).uploadRPH(fileData, week, currentUserEmail);
+            };
+            fr.readAsDataURL(file);
+        }
+    </script>
 </body>
 </html>
