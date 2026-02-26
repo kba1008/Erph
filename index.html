@@ -88,7 +88,7 @@
                         <div class="flex items-start">
                             <span class="material-icons text-indigo-500 text-sm mt-0.5 mr-2">info</span>
                             <p class="text-[11px] text-indigo-800 leading-snug">
-                                <span class="font-bold">PENTING:</span> Maklumat login anda akan disimpan di Google Drive. Jika terlupa password, hanya Admin boleh menyemaknya.
+                                <span class="font-bold">PENTING:</span> Maklumat login anda akan disimpan di Google Sheet 'user'.
                             </p>
                         </div>
                     </div>
@@ -168,31 +168,41 @@
     </div>
 
     <script>
-        const webAppUrl = "https://script.google.com/macros/s/AKfycbzNGQouelsuR28adzuUlhMk8eKnQaso2Bk7RRJIvB9Y0QrPrpW3xILisZGp-Il3n6TAqg/exec";
+        let currentUserEmail = "";
 
-        // --- [PEMBEDAHAN CIKGU AI] MOCK BACKEND UNTUK PWA ---
+        // --- [PEMBEDAHAN CIKGU AI] INTEGRASI CLOUD PWA ---
+        // URL Web App yang dimasukkan:
+        const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbzt1nu7C2iEKk1zmn7f2nccE-fSV58hgpCVceQElFWMZrWBpptOfLTWxAWxLqU5n5JtyA/exec";
+
         if (typeof google === 'undefined' || typeof google.script === 'undefined') {
-            console.log("Mode PWA/Browser dikesan. Mengaktifkan simulasi Mock Backend.");
+            console.log("Mode PWA/Browser dikesan. Menyambung ke: " + CLOUD_API_URL);
+            
+            const runCloud = (funcName, args, callback) => {
+                const formData = new FormData();
+                formData.append('action', funcName);
+                formData.append('args', JSON.stringify(args)); // Menghantar args sebagai JSON string
+                
+                fetch(CLOUD_API_URL, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => callback(data))
+                .catch(err => {
+                    console.error("Ralat Sambungan Cloud:", err);
+                    alert("Gagal menyambung ke server. Sila pastikan anda online.");
+                });
+            };
+
             window.google = { script: { run: {
                 withSuccessHandler: function(callback) {
                     return {
-                        verifyUserLogin: function(email, pass) {
-                            // Simulasi Semakan Password dari Drive
-                            setTimeout(() => {
-                                if(email === 'cikgu.demo@gmail.com' && pass === '123456') {
-                                    callback({ found: true, email: email, role: 'GURU', group: 'Kumpulan Demo' });
-                                } else {
-                                    callback({ found: false });
-                                }
-                            }, 1000);
-                        },
-                        getAvailableWeeks: function() {
-                            setTimeout(() => callback(['MINGGU 1', 'MINGGU 2', 'MINGGU 3']), 500);
-                        },
-                        backendUpload: function(p) { setTimeout(() => callback("OK"), 1000); },
-                        backendCreateFolder: function(n) { setTimeout(() => callback("Folder Created"), 1000); },
-                        saveGroup: function(n,a,m) { setTimeout(() => callback("Group Saved"), 1000); },
-                        registerUserToDrive: function(data) { setTimeout(() => callback("OK"), 1500); }
+                        verifyUserLogin: (e, p) => runCloud('verifyUserLogin', [e, p], callback),
+                        registerUserToDrive: (d) => runCloud('registerUserToDrive', [d], callback),
+                        getAvailableWeeks: () => runCloud('getAvailableWeeks', [], callback),
+                        backendUpload: (p) => runCloud('backendUpload', [p], callback),
+                        backendCreateFolder: (n) => runCloud('backendCreateFolder', [n], callback),
+                        saveGroup: (n,a,m) => runCloud('saveGroup', [n,a,m], callback)
                     }
                 }
             }}};
@@ -229,10 +239,10 @@
             if(!email.includes('@')) return alert("Sila masukkan format emel yang sah.");
 
             showLoading(true);
-            // Hantar data ke backend (Drive)
+            // Hantar data ke backend (Sheet 'user')
             google.script.run.withSuccessHandler(res => {
                 showLoading(false);
-                alert("Pendaftaran Diterima! \n\nMaklumat login anda telah disimpan di Server/Drive.\nSila tunggu kelulusan Admin Master.");
+                alert(res);
                 toggleAuthMode('login');
             }).registerUserToDrive({ name, email, pass });
         }
@@ -246,7 +256,10 @@
             showLoading(true);
             google.script.run.withSuccessHandler(res => {
                 showLoading(false);
-                if(!res.found) return alert("Login Gagal! Emel atau Kata Laluan salah.");
+                if(!res.found) return alert("Login Gagal! Emel/Password salah atau tiada dalam rekod.");
+                
+                // Simpan emel user semasa
+                currentUserEmail = res.email;
                 
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('logoutBtn').classList.remove('hidden');
@@ -269,7 +282,9 @@
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('masterAdminPanel').classList.add('active-tab');
                 document.getElementById('logoutBtn').classList.remove('hidden');
-            } else { alert("Akses Ditolak!"); }
+            } else {
+                alert("Akses Ditolak!");
+            }
         }
 
         function loadWeekDropdown() {
@@ -293,7 +308,8 @@
                     data: e.target.result.split(',')[1],
                     mimeType: file.type,
                     fileName: file.name,
-                    week: week
+                    week: week,
+                    email: currentUserEmail // Hantar emel untuk penamaan fail
                 };
                 google.script.run.withSuccessHandler(res => {
                     showLoading(false);
