@@ -133,8 +133,8 @@
     </div>
 
     <script>
-        // MASUKKAN URL APP SCRIPT ANDA DI SINI
-        const API_URL = "https://script.google.com/macros/s/AKfycbzUCe3rOjQOduquWdhxI5Gzgmikfd9jXo4pvuUM09NPAmW7jrXQo1xKYU4xxLBZVCZR/exec";
+        // ⚠️ PASTIKAN URL APP SCRIPT INI ADALAH URL YANG BARU DI-DEPLOY
+        const API_URL = "https://script.google.com/macros/s/AKfycbwkDZnhxkKroMdO-tzGSx6KTkD3mlvcgf2oZcYYDITbLLKNAgx3Hd6ctIk6uBn9xtiYuw/exec";
         
         let user = { email: "", group: "", name: "" };
         let canvas, ctx, isDrawing = false;
@@ -214,7 +214,7 @@
                             document.getElementById('selectedWeek').value = w; 
                             Array.from(cont.children).forEach(c => c.classList.remove('selected')); 
                             btn.classList.add('selected'); 
-                            fetchTeacherFiles(w); // Tarik fail guru bila klik minggu
+                            fetchTeacherFiles(w); 
                         };
                         cont.appendChild(btn);
                     });
@@ -243,8 +243,6 @@
             } catch (error) { showLoading(false); }
         }
 
-        // --- GURU: HANTAR DAN LIHAT RPH ---
-
         function uploadRPH() {
             const wk = document.getElementById('selectedWeek').value;
             const f = document.getElementById('fileInp').files[0];
@@ -253,14 +251,13 @@
             showLoading(true, "MUAT NAIK FAIL...");
             const reader = new FileReader();
             reader.onload = async function(e) {
-                // Hantar nama cikgu sekali untuk Auto Rename file
                 const payload = { data: e.target.result.split(',')[1], mimeType: f.type, fileName: f.name, week: wk, group: user.group, userName: user.name };
                 const res = await runAPI('upload', payload);
                 showLoading(false);
                 if(res && res.includes("http")) { 
                     alert("RPH berjaya dihantar!"); 
-                    document.getElementById('fileInp').value = ""; // Clear file
-                    fetchTeacherFiles(wk); // Refresh list
+                    document.getElementById('fileInp').value = ""; 
+                    fetchTeacherFiles(wk); 
                 } else { alert("Gagal memuat naik."); }
             };
             reader.readAsDataURL(f);
@@ -275,15 +272,13 @@
             const res = await runAPI('getTeacherFiles', { group: user.group, week: weekName, userName: user.name });
 
             if(!res || res.status === "error") return cont.innerHTML = `<p class='text-xs text-red-500'>Tiada folder.</p>`;
-            if(res.files.length === 0) return cont.innerHTML = `<p class='text-xs text-gray-500 italic'>Belum ada RPH dihantar untuk minggu ini.</p>`;
+            if(res.files.length === 0) return cont.innerHTML = `<p class='text-xs text-gray-500 italic'>Belum ada RPH dihantar.</p>`;
 
             cont.innerHTML = "";
             res.files.forEach(f => {
                 let isSemakan = f.name.includes("[SEMAKAN]");
                 let style = isSemakan ? "bg-green-50 border-green-200" : "bg-white border-gray-200";
                 let badge = isSemakan ? `<span class="bg-green-500 text-white text-[9px] px-2 py-0.5 rounded ml-2">TELAH DISEMAK</span>` : `<span class="bg-yellow-400 text-yellow-900 text-[9px] px-2 py-0.5 rounded ml-2 shadow-sm">MENUNGGU SEMAKAN</span>`;
-                
-                // Buang bracket nama dari fail supaya nampak kemas
                 let cleanName = f.name.replace(`[${user.name}] `, '');
 
                 cont.innerHTML += `
@@ -297,8 +292,6 @@
             });
         }
 
-        // --- ADMIN: PAPARAN FOLDER DASHBOARD ---
-
         async function fetchAdminDashboard(weekName) {
             document.getElementById('submissionArea').classList.remove('hidden');
             document.getElementById('viewingWeek').innerText = weekName;
@@ -306,14 +299,11 @@
             cont.innerHTML = "<p class='text-xs text-center text-gray-500 animate-pulse col-span-2'>Menyusun fail guru...</p>";
 
             const res = await runAPI('getAdminSubmissionsData', { group: user.group, week: weekName });
-            
             if(!res || res.status === "error") return cont.innerHTML = `<p class='text-red-500 text-xs col-span-2'>${res?res.message:'Ralat sistem'}</p>`;
-            
             cont.innerHTML = "";
-            if(res.data.length === 0) return cont.innerHTML = "<p class='text-xs text-gray-500 col-span-2'>Tiada cikgu berdaftar dalam kumpulan ini.</p>";
+            if(res.data.length === 0) return cont.innerHTML = "<p class='text-xs text-gray-500 col-span-2'>Tiada cikgu berdaftar.</p>";
 
             res.data.forEach(teacher => {
-                // Konfigurasi Warna Kad: KUNING = Ada Fail Baru, BIRU = Bersih/Selesai
                 let isYellow = teacher.statusColor === "YELLOW";
                 let bgColor = isYellow ? "bg-yellow-50 border-yellow-300" : "bg-blue-50 border-blue-200";
                 let titleColor = isYellow ? "text-yellow-800" : "text-blue-900";
@@ -343,41 +333,37 @@
                             cardHtml += `
                             <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-green-200 shadow-sm">
                                 <span class="text-[10px] text-green-700 font-bold truncate pr-2">✔️ ${cleanName}</span>
-                                <button onclick="window.open('${f.url}')" class="text-[9px] bg-green-100 text-green-700 px-2 py-1 rounded font-bold hover:bg-green-200">LIHAT</button>
+                                <button onclick="window.open('${f.url}', '_blank')" class="text-[9px] bg-green-100 text-green-700 px-2 py-1 rounded font-bold hover:bg-green-200">LIHAT</button>
                             </div>`;
                         } else {
                             cardHtml += `
                             <div class="flex flex-col space-y-2 bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
                                 <span class="text-xs text-gray-700 font-medium truncate">📄 ${cleanName}</span>
                                 <div class="flex space-x-1">
-                                    <button onclick="window.open('${f.url}')" class="flex-1 text-[10px] bg-gray-100 text-gray-600 py-1.5 rounded font-bold hover:bg-gray-200">Buka</button>
+                                    <button onclick="window.open('${f.url}', '_blank')" class="flex-1 text-[10px] bg-gray-100 text-gray-600 py-1.5 rounded font-bold hover:bg-gray-200">Buka</button>
                                     <button onclick="openReview('${f.url}', '${f.id}', '${f.name}')" class="flex-1 text-[10px] bg-indigo-600 text-white py-1.5 rounded font-bold hover:bg-indigo-700 flex justify-center items-center"><span class="material-icons text-[11px] mr-1">edit</span>CONTENG</button>
                                 </div>
                             </div>`;
                         }
                     });
                 }
-
                 cardHtml += `</div></div>`;
                 cont.innerHTML += cardHtml;
             });
         }
 
-        // --- FUNGSI CANVAS (CONTENG) ---
         function openReview(fileUrl, fileId, fileName) {
             currentFileId = fileId;
             document.getElementById('reviewFileName').innerText = fileName;
-            
             const isImage = fileName.toLowerCase().match(/\.(jpeg|jpg|png|gif)$/i);
             const img = document.getElementById('reviewImage');
             
             if(isImage) { img.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000"; } 
             else {
-                alert("Fail ini adalah PDF. Sila lihat di tab sebelah dan gunakan 'Kertas Kosong' di bawah untuk Cop Pengesahan.");
+                alert("Fail PDF dibuka di tab sebelah. Gunakan Kertas Kosong di sini untuk Cop Pengesahan.");
                 window.open(fileUrl, '_blank');
                 img.src = "https://via.placeholder.com/600x800/ffffff/cccccc?text=Ruang+Catatan+Penyemak";
             }
-
             document.getElementById('reviewModal').classList.remove('hidden');
             document.getElementById('reviewModal').classList.add('flex');
             img.onload = setupCanvas;
@@ -392,11 +378,8 @@
             canvas = document.getElementById('reviewCanvas');
             ctx = canvas.getContext('2d');
             const img = document.getElementById('reviewImage');
-            
-            canvas.width = img.width || 300;
-            canvas.height = img.height || 400;
+            canvas.width = img.width || 300; canvas.height = img.height || 400;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             canvas.onmousedown = startDraw; canvas.onmousemove = draw;
             canvas.onmouseup = endDraw; canvas.onmouseout = endDraw;
             canvas.ontouchstart = (e) => { e.preventDefault(); startDraw(e.touches[0]); };
@@ -410,11 +393,8 @@
         function draw(e) {
             if (!isDrawing) return;
             const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const x = (e.clientX - rect.left) * scaleX;
-            const y = (e.clientY - rect.top) * scaleY;
-
+            const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX; const y = (e.clientY - rect.top) * scaleY;
             ctx.lineWidth = 4; ctx.lineCap = 'round';
             ctx.strokeStyle = document.getElementById('penColor').value;
             ctx.lineTo(x, y); ctx.stroke();
@@ -428,11 +408,9 @@
             const finalCanvas = document.createElement('canvas');
             finalCanvas.width = canvas.width; finalCanvas.height = canvas.height;
             const fCtx = finalCanvas.getContext('2d');
-            
             try {
                 fCtx.drawImage(document.getElementById('reviewImage'), 0, 0, finalCanvas.width, finalCanvas.height);
                 fCtx.drawImage(canvas, 0, 0);
-
                 const dataURL = finalCanvas.toDataURL('image/png');
                 const base64Data = dataURL.split(',')[1];
                 
@@ -443,7 +421,7 @@
                 if(res && res.status === "success") {
                     alert("Semakan berjaya disimpan!");
                     closeReview();
-                    fetchAdminDashboard(document.getElementById('viewingWeek').innerText); // Refresh panel admin
+                    fetchAdminDashboard(document.getElementById('viewingWeek').innerText); 
                 } else alert("Gagal disimpan.");
             } catch (err) { showLoading(false); alert("Ralat menyimpan fail."); }
         }
@@ -452,4 +430,3 @@
     </script>
 </body>
 </html>
-
