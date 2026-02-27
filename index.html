@@ -18,7 +18,7 @@
     <div id="loading" class="loading-overlay">
         <div class="text-center">
             <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-4 border-indigo-600 mb-2"></div>
-            <p class="font-bold text-indigo-900 tracking-wider">SEDANG MEMPROSES...</p>
+            <p class="font-bold text-indigo-900 tracking-wider" id="loadText">SEDANG MEMPROSES...</p>
         </div>
     </div>
 
@@ -33,293 +33,193 @@
     </nav>
 
     <div class="container mx-auto p-4 max-w-xl">
-        
         <div id="loginSection" class="bg-white p-8 rounded-3xl shadow-xl mt-8 border border-gray-100">
             <div class="flex justify-around mb-8 border-b pb-2">
                 <button onclick="toggleAuth('login')" id="btnTabLogin" class="font-bold text-indigo-900 border-b-2 border-indigo-900 pb-2 transition">LOG MASUK</button>
-                <button onclick="toggleAuth('signup')" id="btnTabSignup" class="font-bold text-gray-400 pb-2 transition">DAFTAR GURU</button>
+                <button onclick="toggleAuth('signup')" id="btnTabSignup" class="font-bold text-gray-400 pb-2 transition">DAFTAR</button>
             </div>
             
             <div id="divLogin">
-                <div class="mb-4">
-                    <label class="text-xs font-bold text-gray-500 ml-1">Emel Google (Gmail)</label>
-                    <input type="email" id="loginEmail" placeholder="Cth: guru@moe-dl.edu.my" class="w-full border-2 bg-gray-50 p-3 rounded-xl outline-none focus:border-indigo-500 focus:bg-white transition mt-1">
-                </div>
-                <div class="mb-6">
-                    <label class="text-xs font-bold text-gray-500 ml-1">Kata Laluan</label>
-                    <input type="password" id="loginPass" placeholder="Masukkan kata laluan" class="w-full border-2 bg-gray-50 p-3 rounded-xl outline-none focus:border-indigo-500 focus:bg-white transition mt-1">
-                </div>
-                
-                <button onclick="doLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-black shadow-lg transform active:scale-95 transition text-lg">MASUK SISTEM</button>
-                
+                <input type="email" id="loginEmail" placeholder="Emel Google (Gmail)" class="w-full border-2 bg-gray-50 p-3 rounded-xl outline-none focus:border-indigo-500 mb-4">
+                <input type="password" id="loginPass" placeholder="Kata Laluan" class="w-full border-2 bg-gray-50 p-3 rounded-xl outline-none focus:border-indigo-500 mb-6">
+                <button onclick="doAction('login')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-black shadow-lg transform active:scale-95 transition text-lg">MASUK SISTEM</button>
                 <div class="mt-8 text-center border-t pt-4">
-                    <button onclick="accessMaster()" class="text-[10px] text-gray-400 hover:text-indigo-500 font-bold tracking-widest uppercase transition">Akses Master Admin</button>
+                    <button onclick="accessMaster()" class="text-[10px] text-gray-400 font-bold uppercase tracking-widest hover:text-indigo-500">Akses Master Admin</button>
                 </div>
             </div>
 
             <div id="divSignup" class="hidden space-y-4">
-                <p class="text-xs text-red-500 font-bold mb-4 bg-red-50 p-3 rounded-lg">* Selepas daftar, akaun anda tidak boleh digunakan selagi Admin Sekolah belum sahkan anda ke dalam kumpulan.</p>
-                <div>
-                    <label class="text-xs font-bold text-gray-500 ml-1">Nama Penuh</label>
-                    <input type="text" id="regName" placeholder="Cth: Ahmad bin Abu" class="w-full border-2 bg-gray-50 p-3 rounded-xl outline-none focus:border-indigo-500 mt-1">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-gray-500 ml-1">Emel Google (Gmail)</label>
-                    <input type="email" id="regEmail" placeholder="Cth: guru@moe-dl.edu.my" class="w-full border-2 bg-gray-50 p-3 rounded-xl outline-none focus:border-indigo-500 mt-1">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-gray-500 ml-1">Cipta Kata Laluan</label>
-                    <input type="password" id="regPass" placeholder="Cipta kata laluan anda" class="w-full border-2 bg-gray-50 p-3 rounded-xl outline-none focus:border-indigo-500 mt-1">
-                </div>
-                <button onclick="doSignup()" class="w-full bg-gray-800 hover:bg-black text-white py-4 rounded-2xl font-bold shadow-md mt-4 transition">HANTAR PENDAFTARAN</button>
+                <input type="text" id="regName" placeholder="Nama Penuh" class="w-full border-2 bg-gray-50 p-3 rounded-xl outline-none">
+                <input type="email" id="regEmail" placeholder="Emel Gmail" class="w-full border-2 bg-gray-50 p-3 rounded-xl outline-none">
+                <input type="password" id="regPass" placeholder="Cipta Kata Laluan" class="w-full border-2 bg-gray-50 p-3 rounded-xl outline-none">
+                <button onclick="doAction('signup')" class="w-full bg-gray-800 hover:bg-black text-white py-4 rounded-2xl font-bold mt-4 transition">HANTAR PENDAFTARAN</button>
             </div>
         </div>
 
-        <div id="guruPanel" class="tab-content bg-white p-6 rounded-3xl shadow-xl mt-6 border border-gray-100">
-            <div class="border-b pb-4 mb-6">
-                <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Dashboard Pendidik</p>
-                <h2 class="text-2xl font-black text-gray-800 uppercase" id="welcomeGuru">Nama</h2>
-                <p class="text-sm text-gray-500 mt-1">Sekolah/Kumpulan: <span id="guruGroup" class="font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded"></span></p>
-            </div>
+        <div id="guruPanel" class="tab-content bg-white p-6 rounded-3xl shadow-xl mt-6">
+            <h2 class="text-2xl font-black text-gray-800 uppercase mb-2" id="welcomeGuru">Nama</h2>
+            <p class="text-sm text-gray-500 mb-6">Kumpulan: <span id="guruGroup" class="font-bold text-indigo-600"></span></p>
 
-            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">1. Pilih Minggu Penghantaran</label>
-            <div id="weekList" class="grid grid-cols-2 gap-2 mb-6 max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-2xl border-2 border-gray-100"></div>
+            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Pilih Minggu</label>
+            <div id="weekList" class="grid grid-cols-2 gap-2 mb-6 max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-2xl border"></div>
             
-            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">2. Pilih Fail RPH (PDF/Gambar)</label>
-            <div class="border-2 border-dashed border-indigo-200 p-6 rounded-2xl text-center relative hover:bg-indigo-50 transition group mb-6 bg-gray-50">
-                <input type="file" id="fileInp" onchange="document.getElementById('fileNameTxt').innerText = this.files[0].name" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                <span class="material-icons text-4xl text-indigo-300 group-hover:scale-110 transition">cloud_upload</span>
-                <p id="fileNameTxt" class="text-sm text-gray-600 font-medium mt-2">Klik atau seret fail ke sini</p>
-            </div>
+            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Pilih Fail (PDF/Gambar)</label>
+            <input type="file" id="fileInp" class="w-full p-3 border-2 border-dashed border-indigo-200 rounded-2xl mb-6 bg-gray-50">
             
             <input type="hidden" id="selectedWeek">
-            <button onclick="uploadRPH()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-black shadow-lg transform active:scale-95 transition text-lg">HANTAR RPH SEKARANG</button>
+            <button onclick="uploadRPH()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black shadow-lg transform active:scale-95 transition">HANTAR RPH</button>
         </div>
 
-        <div id="adminPanel" class="tab-content bg-white p-6 rounded-3xl shadow-xl mt-6 border border-gray-100">
-            <div class="flex justify-between items-start mb-6 border-b pb-4">
-                <div>
-                    <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Panel Penyemak</p>
-                    <h2 id="adminGroupName" class="text-2xl font-black text-gray-800">Nama Sekolah</h2>
-                </div>
-                <button onclick="addWeek()" class="bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-2xl shadow-lg transition flex items-center">
-                    <span class="material-icons mr-1 text-sm">add</span> Cipta Minggu
-                </button>
+        <div id="adminPanel" class="tab-content bg-white p-6 rounded-3xl shadow-xl mt-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="adminGroupName" class="text-xl font-black text-gray-800">Nama Sekolah</h2>
+                <button onclick="doAction('createWeek')" class="bg-indigo-600 text-white p-2 rounded-xl"><span class="material-icons">add</span></button>
             </div>
-            
-            <div class="bg-indigo-50 p-4 rounded-2xl">
-                <p class="text-xs font-bold text-indigo-800 mb-3 uppercase tracking-wider">Senarai Folder Minggu</p>
-                <div id="adminWeekList" class="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto bg-white p-2 rounded-xl border border-indigo-100"></div>
-            </div>
+            <div id="adminWeekList" class="grid grid-cols-2 gap-2 bg-indigo-50 p-4 rounded-2xl"></div>
         </div>
 
         <div id="masterPanel" class="tab-content bg-gray-900 p-8 rounded-3xl text-white mt-6 shadow-2xl">
-            <h2 class="text-xl font-bold text-red-500 mb-6 flex items-center border-b border-gray-700 pb-4">
-                <span class="material-icons mr-2">admin_panel_settings</span> KAWALAN PUSAT (MASTER)
-            </h2>
+            <h2 class="text-xl font-bold text-red-500 mb-6 border-b border-gray-700 pb-4">KAWALAN PUSAT (MASTER)</h2>
             <div class="space-y-4 text-black">
-                <div>
-                    <label class="text-xs font-bold text-gray-400 block mb-1">Nama Kumpulan / Sekolah</label>
-                    <input type="text" id="mGName" placeholder="Cth: SK BANDAR BARU" class="w-full p-4 rounded-xl outline-none focus:ring-2 ring-red-500 bg-gray-100">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-gray-400 block mb-1">Emel Google Admin Kumpulan</label>
-                    <input type="text" id="mGAdmin" placeholder="Cth: guru_besar@gmail.com" class="w-full p-4 rounded-xl outline-none focus:ring-2 ring-red-500 bg-gray-100">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-gray-400 block mb-1">Senarai Emel Ahli (Asingkan dengan koma)</label>
-                    <textarea id="mGMembers" placeholder="abu@gmail.com, siti@gmail.com" class="w-full p-4 rounded-xl h-24 outline-none focus:ring-2 ring-red-500 bg-gray-100 text-sm"></textarea>
-                </div>
-                <button onclick="doSaveGroup()" class="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl font-black shadow-lg mt-4 transition">DAFTAR KUMPULAN BARU</button>
+                <input type="text" id="mGName" placeholder="Nama Sekolah" class="w-full p-4 rounded-xl bg-gray-100 outline-none">
+                <input type="text" id="mGAdmin" placeholder="Emel Admin Sekolah" class="w-full p-4 rounded-xl bg-gray-100 outline-none">
+                <textarea id="mGMembers" placeholder="Emel Ahli (koma)" class="w-full p-4 rounded-xl h-24 bg-gray-100 outline-none text-sm"></textarea>
+                <button onclick="doAction('saveGroup')" class="w-full bg-red-600 text-white py-4 rounded-xl font-black shadow-lg">DAFTAR KUMPULAN</button>
             </div>
         </div>
     </div>
 
     <script>
+        // URL API ANDA!
+        const API_URL = "https://script.google.com/macros/s/AKfycbwESR8uqYjCep2b7Cb7uwH3qclGevNmfsQEzeTQlBHE7aqyz2mkYGvVZZpJPiDWlje2JQ/exec";
         let user = { email: "", group: "", name: "" };
 
-        function showLoading(s) { document.getElementById('loading').style.display = s ? 'flex' : 'none'; }
-        
+        function showLoading(s, txt="SEDANG MEMPROSES...") { 
+            document.getElementById('loading').style.display = s ? 'flex' : 'none'; 
+            document.getElementById('loadText').innerText = txt;
+        }
+
         function toggleAuth(mode) {
             document.getElementById('divLogin').classList.toggle('hidden', mode === 'signup');
             document.getElementById('divSignup').classList.toggle('hidden', mode === 'login');
-            
-            const btnLogin = document.getElementById('btnTabLogin');
-            const btnSignup = document.getElementById('btnTabSignup');
-            
-            if(mode === 'login') {
-                btnLogin.className = "font-bold text-indigo-900 border-b-2 border-indigo-900 pb-2 transition";
-                btnSignup.className = "font-bold text-gray-400 pb-2 transition cursor-pointer";
-            } else {
-                btnSignup.className = "font-bold text-indigo-900 border-b-2 border-indigo-900 pb-2 transition";
-                btnLogin.className = "font-bold text-gray-400 pb-2 transition cursor-pointer";
+            document.getElementById('btnTabLogin').className = mode === 'login' ? "font-bold text-indigo-900 border-b-2 border-indigo-900 pb-2 transition" : "font-bold text-gray-400 pb-2 transition cursor-pointer";
+            document.getElementById('btnTabSignup').className = mode === 'signup' ? "font-bold text-indigo-900 border-b-2 border-indigo-900 pb-2 transition" : "font-bold text-gray-400 pb-2 transition cursor-pointer";
+        }
+
+        // FUNGSI UTAMA UNTUK BERHUBUNG DENGAN API GOOGLE (NO CORS ERROR)
+        async function runAPI(actionName, payloadData) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: actionName, data: payloadData }),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" } // Text plain untuk bypass preflight
+                });
+                return await response.json();
+            } catch (err) {
+                alert("Ralat Rangkaian: Pastikan Internet ok dan Web App telah di-deploy.");
+                console.error(err);
+                throw err;
             }
         }
 
-        // --- FUNGSI LOGIN ---
-        function doLogin() {
-            const e = document.getElementById('loginEmail').value;
-            const p = document.getElementById('loginPass').value;
-            
-            if(!e || !p) {
-                alert("Sila isi emel dan kata laluan!");
-                return;
+        async function doAction(action) {
+            if (action === 'login') {
+                const e = document.getElementById('loginEmail').value, p = document.getElementById('loginPass').value;
+                if(!e || !p) return alert("Sila isi emel dan kata laluan!");
+                
+                showLoading(true, "MENGESAHKAN AKAUN...");
+                const res = await runAPI('login', { email: e, password: p });
+                showLoading(false);
+
+                if (res.error) return alert("Ralat Server: " + res.error);
+                if (!res.found) return alert("GAGAL: " + res.message);
+                
+                user = res;
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('logoutBtn').classList.remove('hidden');
+                
+                if(res.role === "ADMIN_KUMPULAN") {
+                    document.getElementById('adminPanel').classList.add('active-tab');
+                    document.getElementById('adminGroupName').innerText = res.group;
+                    doAction('getWeeksAdmin');
+                } else {
+                    document.getElementById('guruPanel').classList.add('active-tab');
+                    document.getElementById('welcomeGuru').innerText = res.name;
+                    document.getElementById('guruGroup').innerText = res.group;
+                    doAction('getWeeksGuru');
+                }
+            } 
+            else if (action === 'signup') {
+                const d = { name: document.getElementById('regName').value, email: document.getElementById('regEmail').value, pass: document.getElementById('regPass').value };
+                if(!d.name || !d.email || !d.pass) return alert("Lengkapkan maklumat.");
+                showLoading(true, "MENDAFTAR AKAUN...");
+                const res = await runAPI('signup', d);
+                showLoading(false);
+                alert(res);
+                toggleAuth('login');
             }
-            
-            showLoading(true);
-            
-            // Panggil fungsi Backend
-            google.script.run
-                .withSuccessHandler(function(res) {
-                    showLoading(false);
-                    
-                    // Semak jika Google Sheet pulangkan mesej Ralat
-                    if(res.found === false) {
-                        alert("GAGAL LOG MASUK: \n" + res.message);
-                        return;
-                    }
-                    
-                    // Jika Berjaya
-                    user = res;
-                    document.getElementById('loginSection').style.display = 'none';
-                    document.getElementById('logoutBtn').classList.remove('hidden');
-                    
-                    if(res.role === "ADMIN_KUMPULAN") {
-                        document.getElementById('adminPanel').classList.add('active-tab');
-                        document.getElementById('adminGroupName').innerText = res.group;
-                        loadWeeksAdmin();
-                    } else {
-                        document.getElementById('guruPanel').classList.add('active-tab');
-                        document.getElementById('welcomeGuru').innerText = res.name;
-                        document.getElementById('guruGroup').innerText = res.group;
-                        loadWeeksGuru();
-                    }
-                })
-                .withFailureHandler(function(error) {
-                    showLoading(false);
-                    alert("Ralat Pelayan Google: " + error.message);
-                })
-                .verifyUserLogin(e, p);
-        }
-
-        function doSignup() {
-            const d = { 
-                name: document.getElementById('regName').value, 
-                email: document.getElementById('regEmail').value, 
-                pass: document.getElementById('regPass').value 
-            };
-            if(!d.name || !d.email || !d.pass) return alert("Lengkapkan maklumat pendaftaran.");
-            
-            showLoading(true);
-            google.script.run
-                .withSuccessHandler(res => {
-                    showLoading(false);
-                    alert(res);
-                    toggleAuth('login');
-                })
-                .withFailureHandler(err => {
-                    showLoading(false);
-                    alert("Ralat Pelayan: " + err.message);
-                })
-                .registerUserToDrive(d);
-        }
-
-        function loadWeeksGuru() {
-            google.script.run.withSuccessHandler(weeks => {
+            else if (action === 'getWeeksGuru') {
+                const weeks = await runAPI('getWeeks', { group: user.group });
                 const cont = document.getElementById('weekList');
-                cont.innerHTML = weeks.length ? "" : "<p class='text-xs text-red-500 col-span-2 text-center py-4 bg-white rounded-xl border border-red-100'>Tiada folder minggu dibuka oleh Admin.</p>";
+                cont.innerHTML = weeks.length ? "" : "<p class='text-xs text-red-500 col-span-2 py-2'>Tiada folder.</p>";
                 weeks.forEach(w => {
                     const btn = document.createElement('div');
-                    btn.className = "p-4 border-2 rounded-xl text-center text-sm font-bold cursor-pointer bg-white text-gray-700 card-week transition shadow-sm hover:shadow-md";
+                    btn.className = "p-3 border-2 rounded-xl text-center text-sm font-bold cursor-pointer bg-white text-gray-700 card-week";
                     btn.innerText = w;
-                    btn.onclick = () => {
-                        document.getElementById('selectedWeek').value = w;
-                        Array.from(cont.children).forEach(c => c.classList.remove('selected'));
-                        btn.classList.add('selected');
-                    };
+                    btn.onclick = () => { document.getElementById('selectedWeek').value = w; Array.from(cont.children).forEach(c => c.classList.remove('selected')); btn.classList.add('selected'); };
                     cont.appendChild(btn);
                 });
-            }).getAvailableWeeks(user.group);
-        }
-
-        function loadWeeksAdmin() {
-            google.script.run.withSuccessHandler(weeks => {
+            }
+            else if (action === 'getWeeksAdmin') {
+                const weeks = await runAPI('getWeeks', { group: user.group });
                 const cont = document.getElementById('adminWeekList');
-                cont.innerHTML = weeks.length ? "" : "<p class='text-xs text-gray-500 col-span-2 text-center py-4'>Sila cipta folder minggu yang pertama.</p>";
-                weeks.forEach(w => {
-                    cont.innerHTML += `<div class="p-4 border rounded-xl font-bold text-indigo-900 bg-white shadow-sm border-indigo-100 text-center text-sm">${w}</div>`;
-                });
-            }).getAvailableWeeks(user.group);
-        }
-
-        function addWeek() {
-            const n = prompt("Masukkan Nama Minggu (Cth: MINGGU 1):");
-            if(!n) return;
-            showLoading(true);
-            google.script.run.withSuccessHandler(res => {
+                cont.innerHTML = weeks.length ? "" : "<p class='text-xs text-gray-500 col-span-2'>Sila cipta minggu.</p>";
+                weeks.forEach(w => cont.innerHTML += `<div class="p-3 border rounded-xl font-bold text-indigo-900 bg-white shadow-sm text-sm text-center">${w}</div>`);
+            }
+            else if (action === 'createWeek') {
+                const n = prompt("Nama Minggu (Cth: MINGGU 1):");
+                if(!n) return;
+                showLoading(true, "MENCIPTA FOLDER...");
+                const res = await runAPI('createWeek', { weekName: n, group: user.group });
                 showLoading(false);
-                if(res.status === 'error') alert("Ralat: " + res.message);
-                else { alert(res.message); loadWeeksAdmin(); }
-            }).backendCreateFolder(n, user.group);
+                alert(res.message);
+                if(res.status === 'success') doAction('getWeeksAdmin');
+            }
+            else if (action === 'saveGroup') {
+                const d = { groupName: document.getElementById('mGName').value, adminEmail: document.getElementById('mGAdmin').value, memberEmailsStr: document.getElementById('mGMembers').value };
+                if(!d.groupName || !d.adminEmail) return alert("Isi Nama dan Emel Admin.");
+                showLoading(true, "MENYIMPAN DATA...");
+                const res = await runAPI('saveGroup', d);
+                showLoading(false);
+                alert(res);
+                location.reload();
+            }
         }
 
         function uploadRPH() {
             const wk = document.getElementById('selectedWeek').value;
             const f = document.getElementById('fileInp').files[0];
-            if(!wk) return alert("Sila pilih MINGGU terlebih dahulu.");
-            if(!f) return alert("Sila muat naik FAIL RPH.");
+            if(!wk || !f) return alert("Sila pilih MINGGU dan FAIL RPH.");
             
-            showLoading(true);
+            showLoading(true, "SEDANG MUAT NAIK FAIL...");
             const reader = new FileReader();
-            reader.onload = function(e) {
-                const d = { 
-                    data: e.target.result.split(',')[1], 
-                    mimeType: f.type, 
-                    fileName: f.name, 
-                    week: wk, 
-                    group: user.group 
-                };
-                google.script.run
-                    .withSuccessHandler(url => {
-                        showLoading(false);
-                        if(url.includes("Ralat")) { alert(url); }
-                        else {
-                            alert("Tahniah! RPH anda berjaya dihantar ke Google Drive Admin.");
-                            location.reload();
-                        }
-                    })
-                    .withFailureHandler(err => {
-                        showLoading(false);
-                        alert("Gagal Hantar: " + err.message);
-                    })
-                    .backendUpload(d);
+            reader.onload = async function(e) {
+                const payload = { data: e.target.result.split(',')[1], mimeType: f.type, fileName: f.name, week: wk, group: user.group };
+                const res = await runAPI('upload', payload);
+                showLoading(false);
+                if(res && res.includes("http")) {
+                    alert("Tahniah! RPH berjaya dihantar.");
+                    location.reload();
+                } else alert("Gagal: " + res);
             };
             reader.readAsDataURL(f);
         }
 
         function accessMaster() {
-            const kod = prompt("Masukkan Kod Akses Master Admin:");
-            if(kod === "101010") {
+            if(prompt("Kod Master:") === "101010") {
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('masterPanel').classList.add('active-tab');
-            } else if (kod !== null) {
-                alert("Kod Akses Salah!");
             }
-        }
-
-        function doSaveGroup() {
-            const gn = document.getElementById('mGName').value;
-            const ga = document.getElementById('mGAdmin').value;
-            const gm = document.getElementById('mGMembers').value;
-            
-            if(!gn || !ga) return alert("Sila isi Nama Kumpulan dan Emel Admin.");
-            
-            showLoading(true);
-            google.script.run.withSuccessHandler(res => {
-                showLoading(false);
-                alert(res);
-                location.reload();
-            }).saveGroup(gn, ga, gm);
         }
     </script>
 </body>
