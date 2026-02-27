@@ -8,87 +8,96 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: none; justify-content: center; align-items: center; z-index: 9999; }
-        .tab-content { display: none; }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 9999; color: white; }
+        .tab-content { display: none; animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .active-tab { display: block; }
-        .card-week.selected { border-color: #4f46e5 !important; background-color: #eef2ff !important; color: #4f46e5 !important; }
-        .star-icon { cursor: pointer; transition: color 0.2s; }
-        .star-icon:hover { color: #d97706; }
+        .card-week.selected { border-color: #6366f1 !important; background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%) !important; color: #312e81 !important; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .star-icon { cursor: pointer; transition: transform 0.2s, color 0.2s; }
+        .star-icon:hover { color: #fbbf24; transform: scale(1.2); }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+        .glass-nav { background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen font-sans">
+<body class="bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900 min-h-screen font-sans selection:bg-pink-500 selection:text-white">
 
     <div id="loading" class="loading-overlay">
         <div class="text-center">
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-4 border-indigo-600 mb-2"></div>
-            <p class="font-bold text-indigo-900 tracking-wider" id="loadText">SEDANG MEMPROSES...</p>
+            <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-pink-500 mb-4"></div>
+            <p class="font-black text-xl text-white tracking-[0.2em] animate-pulse" id="loadText">SEDANG MEMPROSES...</p>
         </div>
     </div>
 
-    <nav class="bg-indigo-900 text-white p-4 shadow-md sticky top-0 z-50">
+    <nav class="glass-nav text-white p-4 sticky top-0 z-50 shadow-2xl">
         <div class="container mx-auto flex justify-between items-center max-w-2xl">
             <div class="flex items-center space-x-2">
-                <span class="material-icons">cloud_done</span>
-                <span class="font-bold uppercase tracking-widest text-lg">eRPH Cloud</span>
+                <div class="bg-gradient-to-br from-pink-500 to-orange-400 p-2 rounded-lg shadow-lg">
+                    <span class="material-icons text-white">cloud_done</span>
+                </div>
+                <span class="font-black uppercase tracking-widest text-lg text-transparent bg-clip-text bg-gradient-to-r from-pink-200 to-indigo-200 drop-shadow-sm">eRPH Cloud</span>
             </div>
             <div class="flex space-x-2">
-                <button id="groupBtn" onclick="showGroupSelection()" class="hidden bg-indigo-700 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-indigo-600">Senarai Kumpulan</button>
-                <button id="switchRoleBtn" onclick="switchRoleView()" class="hidden bg-green-500 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-green-600">Mod Guru</button>
-                <button id="changePassBtn" onclick="changeOwnPassword()" class="hidden bg-yellow-500 px-3 py-2 rounded-full text-xs font-bold text-black shadow-lg hover:bg-yellow-400">Tukar Pass</button>
-                <button id="logoutBtn" onclick="doLogout()" class="hidden bg-red-500 px-4 py-2 rounded-full text-xs font-bold shadow-lg">Log Keluar</button>
+                <button id="groupBtn" onclick="showGroupSelection()" class="hidden bg-indigo-600/80 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-indigo-500 hover:scale-105 transition-transform">Kumpulan</button>
+                <button id="switchRoleBtn" onclick="switchRoleView()" class="hidden bg-green-500/80 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-green-600 hover:scale-105 transition-transform">Mod Guru</button>
+                <button id="changePassBtn" onclick="changeOwnPassword()" class="hidden bg-yellow-500/80 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-yellow-400 hover:scale-105 transition-transform">Pass</button>
+                <button id="logoutBtn" onclick="doLogout()" class="hidden bg-red-500/80 px-4 py-2 rounded-full text-xs font-bold shadow-lg hover:bg-red-600 hover:scale-105 transition-transform">Keluar</button>
             </div>
         </div>
     </nav>
 
-    <div class="container mx-auto p-4 max-w-xl">
-        <div id="loginSection" class="bg-white p-8 rounded-3xl shadow-xl mt-8">
+    <div class="container mx-auto p-4 max-w-xl pb-20">
+        <div id="loginSection" class="glass-panel p-8 rounded-3xl shadow-2xl mt-8 transform transition-all hover:shadow-[0_20px_50px_rgba(8,_112,_184,_0.7)]">
+            <div class="text-center mb-6">
+                <h1 class="text-3xl font-black text-slate-800 mb-1">SELAMAT DATANG</h1>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Portal Pengurusan RPH Digital</p>
+            </div>
             <div class="flex justify-around mb-8 border-b pb-2">
-                <button onclick="toggleAuth('login')" id="btnTabLogin" class="font-bold text-indigo-900 border-b-2 border-indigo-900 pb-2">LOG MASUK</button>
-                <button onclick="toggleAuth('signup')" id="btnTabSignup" class="font-bold text-gray-400 pb-2">DAFTAR</button>
+                <button onclick="toggleAuth('login')" id="btnTabLogin" class="font-bold text-indigo-900 border-b-4 border-indigo-600 pb-2 transition-all">LOG MASUK</button>
+                <button onclick="toggleAuth('signup')" id="btnTabSignup" class="font-bold text-gray-400 pb-2 hover:text-indigo-500 transition-all">DAFTAR</button>
             </div>
             <div id="divLogin">
-                <input type="text" id="loginIC" placeholder="No. Kad Pengenalan" class="w-full border p-3 rounded-xl mb-4 bg-gray-50">
-                <input type="password" id="loginPass" placeholder="Kata Laluan" class="w-full border p-3 rounded-xl mb-3 bg-gray-50">
+                <input type="text" id="loginIC" placeholder="No. Kad Pengenalan" class="w-full border-2 border-gray-100 p-4 rounded-xl mb-4 bg-gray-50 focus:bg-white focus:border-indigo-500 outline-none transition-all shadow-inner font-bold text-gray-700">
+                <input type="password" id="loginPass" placeholder="Kata Laluan" class="w-full border-2 border-gray-100 p-4 rounded-xl mb-3 bg-gray-50 focus:bg-white focus:border-indigo-500 outline-none transition-all shadow-inner font-bold text-gray-700">
                 
                 <!-- LOCK ICON TOGGLE -->
                 <div class="flex items-center mb-6 justify-end cursor-pointer transition-colors select-none" onclick="toggleRemember()">
-                    <div id="lockContainer" class="flex items-center text-gray-400 hover:text-indigo-600">
+                    <div id="lockContainer" class="flex items-center text-gray-400 hover:text-indigo-600 bg-gray-100 px-3 py-1 rounded-full">
                          <span id="lockIcon" class="material-icons text-sm mr-1">lock_open</span>
-                         <span id="lockText" class="text-xs font-bold uppercase tracking-wider">Ingat Saya</span>
+                         <span id="lockText" class="text-[10px] font-bold uppercase tracking-wider">Ingat Saya</span>
                     </div>
                     <input type="checkbox" id="chkRemember" class="hidden">
                 </div>
 
-                <button onclick="doAction('login')" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black shadow-lg">MASUK SISTEM</button>
-                <button onclick="accessMaster()" class="w-full mt-6 text-[10px] text-gray-400 uppercase tracking-widest font-bold">Akses Master Admin</button>
+                <button onclick="doAction('login')" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-2xl font-black shadow-lg hover:shadow-indigo-500/50 hover:scale-[1.02] transition-all tracking-wider text-sm">MASUK SISTEM</button>
+                <button onclick="accessMaster()" class="w-full mt-6 text-[10px] text-gray-400 uppercase tracking-widest font-bold hover:text-indigo-500">Akses Master Admin</button>
             </div>
             <div id="divSignup" class="hidden space-y-4">
-                <input type="text" id="regName" placeholder="Nama Penuh" class="w-full border p-3 rounded-xl bg-gray-50">
-                <input type="text" id="regIC" placeholder="No. Kad Pengenalan (Tanpa -)" class="w-full border p-3 rounded-xl bg-gray-50">
-                <input type="password" id="regPass" placeholder="Cipta Kata Laluan" class="w-full border p-3 rounded-xl bg-gray-50">
-                <button onclick="doAction('signup')" class="w-full bg-gray-800 text-white py-4 rounded-2xl font-bold">HANTAR PENDAFTARAN</button>
+                <input type="text" id="regName" placeholder="Nama Penuh" class="w-full border-2 border-gray-100 p-4 rounded-xl bg-gray-50 focus:border-indigo-500 outline-none font-bold">
+                <input type="text" id="regIC" placeholder="No. Kad Pengenalan (Tanpa -)" class="w-full border-2 border-gray-100 p-4 rounded-xl bg-gray-50 focus:border-indigo-500 outline-none font-bold">
+                <input type="password" id="regPass" placeholder="Cipta Kata Laluan" class="w-full border-2 border-gray-100 p-4 rounded-xl bg-gray-50 focus:border-indigo-500 outline-none font-bold">
+                <button onclick="doAction('signup')" class="w-full bg-slate-800 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all shadow-lg">HANTAR PENDAFTARAN</button>
             </div>
         </div>
 
         <!-- NEW: GROUP SELECTION PANEL -->
-        <div id="groupSelectionPanel" class="tab-content bg-white p-6 rounded-3xl shadow-xl mt-6">
-            <h2 class="text-xl font-black text-indigo-900 mb-4 uppercase text-center">Pilih Kumpulan Anda</h2>
+        <div id="groupSelectionPanel" class="tab-content glass-panel p-6 rounded-3xl shadow-2xl mt-6">
+            <h2 class="text-xl font-black text-indigo-900 mb-4 uppercase text-center tracking-wide">Pilih Kumpulan Anda</h2>
             <div id="groupListContainer" class="space-y-3">
                 <!-- Buttons injected here -->
             </div>
         </div>
 
-        <div id="guruPanel" class="tab-content bg-white p-6 rounded-3xl shadow-xl mt-6">
+        <div id="guruPanel" class="tab-content glass-panel p-6 rounded-3xl shadow-2xl mt-6">
             <div class="flex justify-between items-start">
                 <div>
-                    <h2 class="text-2xl font-black text-gray-800 uppercase" id="welcomeGuru">Nama</h2>
-                    <p class="text-sm text-gray-500 mb-6">Kumpulan: <span id="guruGroup" class="font-bold text-indigo-600"></span></p>
+                    <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight" id="welcomeGuru">Nama</h2>
+                    <p class="text-sm text-slate-500 mb-6 font-medium">Kumpulan: <span id="guruGroup" class="font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded"></span></p>
                 </div>
-                <div id="myStats" class="bg-yellow-100 p-2 rounded-xl text-center border border-yellow-300">
-                    <p class="text-[10px] font-bold text-yellow-800 uppercase">Markah Terkumpul</p>
-                    <div class="flex items-center justify-center space-x-1">
+                <div id="myStats" class="bg-gradient-to-br from-yellow-100 to-orange-100 p-3 rounded-2xl text-center border border-yellow-200 shadow-sm">
+                    <p class="text-[9px] font-black text-yellow-800 uppercase tracking-wide">Markah Terkumpul</p>
+                    <div class="flex items-center justify-center space-x-1 mt-1">
                         <span class="material-icons text-yellow-600 text-sm">star</span>
-                        <span id="myWeeklyStars" class="font-black text-xl text-yellow-900">0</span>
+                        <span id="myWeeklyStars" class="font-black text-2xl text-yellow-900">0</span>
                     </div>
                 </div>
             </div>
@@ -98,89 +107,94 @@
                 <div id="leaderboardList" class="space-y-2"></div>
             </div>
 
-            <label class="text-xs font-bold text-gray-400 uppercase">1. Pilih Minggu</label>
-            <div id="weekList" class="grid grid-cols-2 gap-2 mb-6 mt-1 p-2 bg-gray-50 rounded-2xl border"></div>
+            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">1. Pilih Minggu</label>
+            <div id="weekList" class="grid grid-cols-2 gap-3 mb-6 mt-2 p-3 bg-slate-50/50 rounded-2xl border border-slate-200"></div>
             
-            <label class="text-xs font-bold text-gray-400 uppercase">2. Muat Naik Fail RPH</label>
-            <input type="file" id="fileInp" class="w-full p-3 border-2 border-dashed border-indigo-200 rounded-2xl mb-4 bg-gray-50 mt-1">
+            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">2. Muat Naik Fail RPH</label>
+            <div class="relative mt-2 mb-4">
+                <input type="file" id="fileInp" class="w-full p-4 border-2 border-dashed border-indigo-300 rounded-2xl bg-indigo-50/30 text-sm font-bold text-indigo-900 focus:bg-white transition-all">
+                <div class="absolute top-0 right-0 p-4 pointer-events-none">
+                    <span class="material-icons text-indigo-300">cloud_upload</span>
+                </div>
+            </div>
             <input type="hidden" id="selectedWeek">
-            <button onclick="uploadRPH()" class="w-full bg-indigo-600 text-white py-3 rounded-2xl font-black shadow-lg">HANTAR RPH</button>
+            <button onclick="uploadRPH()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-2xl font-black shadow-lg hover:shadow-indigo-500/50 hover:scale-[1.02] transition-all">HANTAR RPH</button>
 
-            <div id="teacherFilesArea" class="mt-8 pt-6 border-t border-gray-100 hidden">
+            <div id="teacherFilesArea" class="mt-8 pt-6 border-t border-slate-200 hidden">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-sm font-bold text-gray-800 flex items-center"><span class="material-icons text-indigo-500 mr-1">history</span> Sejarah Hantaran:</h3>
-                    <span id="lblTeacherWeek" class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded">-</span>
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center uppercase tracking-wide"><span class="material-icons text-indigo-500 mr-1">history</span> Sejarah Hantaran:</h3>
+                    <span id="lblTeacherWeek" class="bg-indigo-100 text-indigo-800 text-xs font-black px-3 py-1 rounded-full">-</span>
                 </div>
                 <div id="teacherFileList" class="space-y-3"></div>
             </div>
         </div>
 
-        <div id="adminPanel" class="tab-content bg-white p-6 rounded-3xl shadow-xl mt-6">
+        <div id="adminPanel" class="tab-content glass-panel p-6 rounded-3xl shadow-2xl mt-6">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
-                <h2 id="adminGroupName" class="text-xl font-black text-gray-800 uppercase">Nama Sekolah</h2>
-                <button onclick="doAction('createWeek')" class="bg-indigo-600 text-white p-2 rounded-xl flex items-center shadow-lg"><span class="material-icons text-sm mr-1">add</span> Minggu</button>
+                <h2 id="adminGroupName" class="text-xl font-black text-slate-800 uppercase">Nama Sekolah</h2>
+                <button onclick="doAction('createWeek')" class="bg-indigo-600 text-white p-2 px-4 rounded-xl flex items-center shadow-lg hover:bg-indigo-500 font-bold text-xs"><span class="material-icons text-sm mr-1">add</span> Minggu</button>
             </div>
             
-            <label class="text-xs font-bold text-gray-400 uppercase">Senarai Folder Minggu</label>
-            <div id="adminWeekList" class="grid grid-cols-2 gap-2 bg-indigo-50 p-4 rounded-2xl mb-6 mt-1"></div>
+            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Senarai Folder Minggu</label>
+            <div id="adminWeekList" class="grid grid-cols-2 gap-3 bg-slate-50/50 p-4 rounded-2xl mb-6 mt-2 border border-slate-200"></div>
 
             <div id="submissionArea" class="hidden mt-6">
-                <h3 class="font-bold text-gray-800 border-b pb-2 mb-4 flex justify-between items-center">
-                    <span>Folder Guru</span>
-                    <span id="viewingWeek" class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded text-xs"></span>
+                <h3 class="font-bold text-slate-800 border-b pb-2 mb-4 flex justify-between items-center">
+                    <span class="uppercase tracking-wide text-sm">Folder Guru</span>
+                    <span id="viewingWeek" class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-[10px] font-black"></span>
                 </h3>
                 <div id="adminTeacherGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
             </div>
         </div>
 
-        <div id="masterPanel" class="tab-content bg-gray-900 p-8 rounded-3xl text-white mt-6 shadow-2xl">
-            <h2 class="text-2xl font-black text-red-500 mb-6 flex items-center"><span class="material-icons mr-2">admin_panel_settings</span> KAWALAN PUSAT</h2>
+        <div id="masterPanel" class="tab-content bg-slate-900/95 backdrop-blur p-8 rounded-3xl text-white mt-6 shadow-2xl border border-slate-700">
+            <h2 class="text-2xl font-black text-red-500 mb-6 flex items-center tracking-tighter"><span class="material-icons mr-2">admin_panel_settings</span> KAWALAN PUSAT</h2>
             
             <!-- SENARAI USER -->
-            <div class="mb-10 bg-gray-800 p-4 rounded-xl border border-gray-600">
-                <h3 class="text-sm font-bold text-blue-400 mb-3 border-b border-gray-700 pb-2">SENARAI SEMUA PENGGUNA (IC)</h3>
-                <div id="masterUserList" class="space-y-2 h-64 overflow-auto">
-                    <p class="text-xs text-gray-500 animate-pulse">Memuatkan data pengguna...</p>
+            <div class="mb-10 bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-inner">
+                <h3 class="text-xs font-black text-blue-400 mb-3 border-b border-slate-700 pb-2 uppercase tracking-widest">Senarai Pengguna (IC)</h3>
+                <div id="masterUserList" class="space-y-2 h-64 overflow-auto custom-scrollbar">
+                    <p class="text-xs text-slate-500 animate-pulse">Memuatkan data pengguna...</p>
                 </div>
             </div>
 
             <div class="mb-10">
-                <h3 class="text-sm font-bold text-gray-400 mb-3 border-b border-gray-700 pb-2">SENARAI KUMPULAN BERDAFTAR</h3>
+                <h3 class="text-xs font-black text-slate-400 mb-3 border-b border-slate-700 pb-2 uppercase tracking-widest">Kumpulan Berdaftar</h3>
                 <div id="masterGroupList" class="space-y-3">
-                    <p class="text-xs text-gray-500 animate-pulse">Memuatkan data dari pangkalan data...</p>
+                    <p class="text-xs text-slate-500 animate-pulse">Memuatkan data dari pangkalan data...</p>
                 </div>
             </div>
             
             <div class="mb-10">
-                 <h3 class="text-sm font-bold text-yellow-400 mb-3 border-b border-gray-700 pb-2">PRESTASI GLOBAL GURU (TOTAL BINTANG)</h3>
-                 <div id="masterStatsList" class="space-y-2 bg-gray-800 p-4 rounded-xl h-48 overflow-auto">
-                     <p class="text-xs text-gray-500 italic">Sila tunggu...</p>
+                 <h3 class="text-xs font-black text-yellow-400 mb-3 border-b border-slate-700 pb-2 uppercase tracking-widest">Global Leaderboard</h3>
+                 <div id="masterStatsList" class="space-y-2 bg-slate-800 p-4 rounded-xl h-48 overflow-auto border border-slate-700">
+                     <p class="text-xs text-slate-500 italic">Sila tunggu...</p>
                  </div>
             </div>
 
-            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-inner">
-                <h3 id="masterFormTitle" class="text-sm font-bold text-green-400 mb-4 flex items-center"><span class="material-icons text-sm mr-1">add_circle</span> DAFTAR KUMPULAN BAHARU</h3>
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-inner">
+                <h3 id="masterFormTitle" class="text-sm font-bold text-green-400 mb-4 flex items-center uppercase tracking-wide"><span class="material-icons text-sm mr-1">add_circle</span> Daftar Kumpulan Baharu</h3>
                 <div class="space-y-4 text-black">
                     <input type="hidden" id="mGMode" value="new">
                     
                     <div>
-                        <label class="text-[10px] text-gray-400 font-bold uppercase ml-1">Nama Kumpulan (Unik)</label>
-                        <input type="text" id="mGName" placeholder="Contoh: SK BANDAR BARU" class="w-full p-4 rounded-xl mt-1 bg-gray-100 focus:bg-white transition-all">
+                        <label class="text-[10px] text-slate-400 font-bold uppercase ml-1">Nama Kumpulan (Unik)</label>
+                        <input type="text" id="mGName" placeholder="Contoh: SK BANDAR BARU" class="w-full p-4 rounded-xl mt-1 bg-slate-100 focus:bg-white transition-all font-bold">
                     </div>
                     
                     <div>
-                        <label class="text-[10px] text-gray-400 font-bold uppercase ml-1">IC Admin Kumpulan</label>
-                        <input type="text" id="mGAdmin" placeholder="No. IC Admin (Boleh lebih dari satu, pisahkan koma)" class="w-full p-4 rounded-xl mt-1 bg-gray-100 focus:bg-white transition-all">
+                        <label class="text-[10px] text-slate-400 font-bold uppercase ml-1">IC Admin Kumpulan</label>
+                        <input type="text" id="mGAdmin" placeholder="No. IC Admin" class="w-full p-4 rounded-xl mt-1 bg-slate-100 focus:bg-white transition-all font-bold">
                     </div>
                     
                     <div>
-                        <label class="text-[10px] text-gray-400 font-bold uppercase ml-1">Senarai IC Ahli (Guru)</label>
-                        <textarea id="mGMembers" placeholder="pisahkan, dengan, koma (Cth: 800101015555, 900202026666)" class="w-full p-4 rounded-xl h-24 mt-1 bg-gray-100 focus:bg-white transition-all leading-relaxed"></textarea>
+                        <label class="text-[10px] text-slate-400 font-bold uppercase ml-1">Senarai IC Ahli (Guru)</label>
+                        <textarea id="mGMembers" placeholder="pisahkan, dengan, koma" class="w-full p-4 rounded-xl h-24 mt-1 bg-slate-100 focus:bg-white transition-all leading-relaxed font-mono text-xs"></textarea>
                     </div>
 
                     <div class="flex space-x-2 pt-2">
                         <button id="btnSaveGroup" onclick="submitMasterGroup()" class="flex-1 bg-red-600 text-white py-4 rounded-xl font-black shadow-lg hover:bg-red-500 transition-colors">DAFTAR KUMPULAN</button>
-                        <button id="btnCancelEdit" onclick="resetMasterForm()" class="hidden bg-gray-500 text-white px-6 py-4 rounded-xl font-bold shadow-lg hover:bg-gray-400 transition-colors">BATAL</button>
+                        <button id="btnCancelEdit" onclick="resetMasterForm()" class="hidden bg-slate-500 text-white px-6 py-4 rounded-xl font-bold shadow-lg hover:bg-slate-400 transition-colors">BATAL</button>
                     </div>
                 </div>
             </div>
@@ -188,7 +202,679 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbxX1IFV1xs-T72HOy02KA9sgXcKSRqJ1YopCz_paNCothwh3Yp5SZ-D8erwdHhmXrw87A/exec";
+        const API_URL = "const AI_SYS_PROMPT = "Anda adalah Penilai RPH yang SANGAT TEGAS, CEREWET, dan 'KEDEKUT' markah. Bertindak seperti Guru Besar yang sukar dipuaskan.\n\nPANDUAN PEMARKAHAN:\n5 (CEMERLANG): Wajib ulasan POSITIF yang PANJANG, TERPERINCI, dan SANGAT MENDALAM. Pujian ringkas TIDAK LAYAK dapat 5.\n4 (BAIK): Ulasan positif standard atau ringkas.\n3 (SEDERHANA): Neutral atau ulasan 'ok' sahaja.\n2 (LEMAH): Ada teguran kecil.\n1 (SANGAT LEMAH): Ulasan negatif, kritikan, atau teguran keras.\n0: Tiada.\n\nOUTPUT: Hanya satu digit nombor (0-5).";
+
+const SS_ID = "15qXW76aBfW6w2gMqUjSLOoFfJXX3emAy60jROZOn7kk"; 
+const MAIN_FOLDER_ID = "1UaRu8fInaCWKgvL-Sxbo9UZKpOG4d3KU"; 
+const SHEET_NAME_USER = "user";
+const SHEET_NAME_GROUPS = "groups";
+const SHEET_NAME_FOLDERS = "Folders"; 
+const SHEET_NAME_RATINGS = "Ratings";
+const SHEET_NAME_API = "API_KEY";
+
+function getSS() { return SpreadsheetApp.openById(SS_ID); }
+function getSheetSafe(name, headers) {
+  const ss = getSS();
+  let sheet = ss.getSheetByName(name);
+  if (!sheet) { sheet = ss.insertSheet(name); if (headers) sheet.appendRow(headers); }
+  return sheet;
+}
+
+// ROUTER UTAMA
+function doPost(e) {
+  try {
+    const req = JSON.parse(e.postData.contents);
+    const action = req.action;
+    const data = req.data;
+    let result;
+
+    if (action === "login") result = verifyUserLogin(data.ic, data.password);
+    else if (action === "signup") result = registerUserToDrive(data);
+    else if (action === "getWeeks") result = getAvailableWeeks(data.group, data.role, data.userName);
+    else if (action === "createWeek") result = backendCreateFolder(data.weekName, data.group);
+    else if (action === "upload") result = backendUpload(data);
+    else if (action === "saveGroup") result = saveGroup(data.groupName, data.adminEmail, data.memberEmailsStr);
+    else if (action === "getAdminSubmissionsData") result = getAdminSubmissionsData(data.group, data.week);
+    else if (action === "getTeacherFiles") result = getTeacherFiles(data.group, data.week, data.userName);
+    
+    // FUNGSI RATING & RANKING
+    else if (action === "rateStar") result = backendRateStar(data);
+    else if (action === "saveComment") result = backendSaveComment(data);
+    else if (action === "getLeaderboard") result = backendGetLeaderboard(data);
+    else if (action === "getGlobalStats") result = backendGetGlobalStats();
+
+    // FUNGSI MASTER
+    else if (action === "getAllGroups") result = backendGetAllGroups();
+    else if (action === "updateGroup") result = backendUpdateGroup(data);
+    else if (action === "deleteGroup") result = backendDeleteGroup(data.groupName);
+    else if (action === "getAllUsers") result = backendGetAllUsers();
+    else if (action === "resetUserPassword") result = backendResetPassword(data.ic);
+    else if (action === "changePassword") result = backendChangePassword(data.ic, data.newPass);
+    else if (action === "deleteUser") result = backendDeleteUser(data.ic);
+
+    return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ error: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function verifyUserLogin(ic, password) {
+  try {
+    const ss = getSS();
+    const userSheet = ss.getSheetByName(SHEET_NAME_USER);
+    const groupSheet = ss.getSheetByName(SHEET_NAME_GROUPS);
+    
+    const userData = userSheet.getDataRange().getValues();
+    let validUser = null;
+    const inputIC = ic.toString().trim().toLowerCase();
+    
+    for (let i = 1; i < userData.length; i++) {
+       let uIC = String(userData[i][2]).trim().toLowerCase();
+       if (uIC === inputIC) {
+         if (String(userData[i][3]) === String(password)) {
+           validUser = { name: userData[i][1], ic: uIC }; 
+         } else {
+           return { found: false, message: "Kata laluan salah." };
+         }
+         break;
+       }
+    }
+    
+    if (!validUser) return { found: false, message: "IC tidak berdaftar." };
+
+    const groupData = groupSheet ? groupSheet.getDataRange().getValues() : [];
+    let accessList = [];
+    
+    for (let i = 1; i < groupData.length; i++) {
+       let gName = groupData[i][0];
+       let admins = String(groupData[i][1]).toLowerCase().split(',').map(s=>s.trim());
+       let members = String(groupData[i][3]).toLowerCase().split(',').map(s=>s.trim());
+       
+       if (admins.includes(inputIC)) {
+         accessList.push({ group: gName, role: "ADMIN_KUMPULAN" });
+       } 
+       else if (members.includes(inputIC)) {
+         accessList.push({ group: gName, role: "GURU" });
+       }
+    }
+
+    return { 
+      found: true, 
+      name: validUser.name, 
+      email: validUser.ic,
+      groups: accessList 
+    };
+
+  } catch (err) { return { found: false, message: "Ralat: " + err.toString() }; }
+}
+
+function registerUserToDrive(data) {
+  try {
+    let sheet = getSheetSafe(SHEET_NAME_USER, ["Timestamp", "Nama", "Email", "Password", "Role", "Group"]);
+    const allData = sheet.getDataRange().getValues();
+    const inputIC = data.ic.toString().trim().toLowerCase();
+    for (let i = 1; i < allData.length; i++) {
+      let sheetIC = allData[i][2] ? allData[i][2].toString().trim().toLowerCase() : "";
+      if (sheetIC === inputIC) return "No. IC ini sudah berdaftar.";
+    }
+    sheet.appendRow([new Date(), data.name.trim(), inputIC, data.pass.trim(), "GURU", "PENDING"]);
+    return "Pendaftaran Berjaya! Sila maklumkan Admin.";
+  } catch (err) { return "Gagal mendaftar: " + err.toString(); }
+}
+
+function backendCreateFolder(weekName, groupName) {
+  try {
+    const groupSheet = getSS().getSheetByName(SHEET_NAME_GROUPS);
+    if(!groupSheet) return { status: "error", message: "Tab 'groups' tiada." };
+    const groups = groupSheet.getDataRange().getValues();
+    let targetParentId = MAIN_FOLDER_ID;
+    for(let i=1; i<groups.length; i++) { if(groups[i][0] === groupName) { targetParentId = groups[i][2]; break; } }
+    
+    const newFolder = DriveApp.getFolderById(targetParentId).createFolder(weekName);
+    newFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    let folderSheet = getSheetSafe(SHEET_NAME_FOLDERS, ["Week", "ID", "Date", "GroupName"]);
+    folderSheet.appendRow([weekName, newFolder.getId(), new Date(), groupName]);
+    return { status: "success", message: "Folder " + weekName + " berjaya dicipta." };
+  } catch (e) { return { status: "error", message: e.toString() }; }
+}
+
+function getAvailableWeeks(groupName, role, userName) {
+  const sheet = getSS().getSheetByName(SHEET_NAME_FOLDERS);
+  if(!sheet) return [];
+  const data = sheet.getDataRange().getValues().slice(1);
+  const weeks = data.filter(r => r[3] === groupName).map(r => r[0]).reverse();
+
+  if (!role) return weeks;
+
+  const rateSheet = getSheetSafe(SHEET_NAME_RATINGS, ["Timestamp", "Group", "Week", "TeacherName", "FileID", "FileName", "Rating", "Comment"]);
+  const rateData = rateSheet.getDataRange().getValues();
+  
+  let result = [];
+
+  weeks.forEach(w => {
+      let status = 'DEFAULT';
+      
+      if (role === 'GURU') {
+          let myFiles = rateData.filter(r => r[1] === groupName && r[2] === w && r[3] === userName);
+          let total = myFiles.length;
+          let verified = myFiles.filter(r => (parseInt(r[6]) || 0) > 0).length;
+
+          if (total === 0) status = 'RED'; 
+          else if (verified < total) status = 'YELLOW'; 
+          else if (verified === total) status = 'BLUE'; 
+      }
+      else if (role === 'ADMIN') {
+          let allFiles = rateData.filter(r => r[1] === groupName && r[2] === w);
+          let total = allFiles.length;
+          let verified = allFiles.filter(r => (parseInt(r[6]) || 0) > 0).length;
+          
+          if (total > 0 && verified < total) status = 'RED'; 
+          else if (total > 0 && verified === total) status = 'YELLOW'; 
+      }
+      
+      result.push({ name: w, status: status });
+  });
+
+  return result;
+}
+
+function backendUpload(obj) {
+  try {
+    const folderSheet = getSS().getSheetByName(SHEET_NAME_FOLDERS);
+    const folderData = folderSheet.getDataRange().getValues();
+    let targetId = "";
+    for(let i=1; i<folderData.length; i++) { 
+      if(folderData[i][0] === obj.week && folderData[i][3] === obj.group) { targetId = folderData[i][1]; break; } 
+    }
+    if(!targetId) return "Ralat: Folder minggu tidak dijumpai.";
+    
+    const newFileName = "[" + obj.userName + "] " + obj.fileName;
+    const blob = Utilities.newBlob(Utilities.base64Decode(obj.data), obj.mimeType, newFileName);
+    const newFile = DriveApp.getFolderById(targetId).createFile(blob);
+    newFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    const rateSheet = getSheetSafe(SHEET_NAME_RATINGS, ["Timestamp", "Group", "Week", "TeacherName", "FileID", "FileName", "Rating", "Comment"]);
+    rateSheet.appendRow([new Date(), obj.group, obj.week, obj.userName, newFile.getId(), newFileName, 0, ""]);
+
+    return newFile.getUrl();
+  } catch(e) { return "Ralat Upload: " + e.toString(); }
+}
+
+function saveGroup(groupName, adminEmail, memberEmailsStr) {
+  try {
+    const userSheet = getSheetSafe(SHEET_NAME_USER, ["Timestamp", "Nama", "Email", "Password", "Role", "Group"]);
+    const groupFolder = DriveApp.getFolderById(MAIN_FOLDER_ID).createFolder(groupName);
+    groupFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    let groupSheet = getSheetSafe(SHEET_NAME_GROUPS, ["Nama Kumpulan", "Admin Emel", "Folder ID", "Ahli"]);
+    groupSheet.appendRow([groupName, adminEmail, groupFolder.getId(), memberEmailsStr]);
+    
+    return "Kumpulan berjaya didaftarkan!";
+  } catch (e) { return "Ralat Kumpulan: " + e.toString(); }
+}
+
+function getRatingsMap() {
+  const sheet = getSheetSafe(SHEET_NAME_RATINGS, ["Timestamp", "Group", "Week", "TeacherName", "FileID", "FileName", "Rating", "Comment", "AIRating"]);
+  const data = sheet.getDataRange().getValues();
+  let map = {};
+  for(let i=1; i<data.length; i++) {
+    map[data[i][4]] = { rating: data[i][6], comment: data[i][7], aiRating: data[i][8] || 0 };
+  }
+  return map;
+}
+
+function getAdminSubmissionsData(groupName, weekName) {
+  try {
+    const userSheet = getSS().getSheetByName(SHEET_NAME_USER);
+    const groupSheet = getSS().getSheetByName(SHEET_NAME_GROUPS);
+    const groupData = groupSheet.getDataRange().getValues();
+    let teacherICs = [];
+    
+    for(let i=1; i<groupData.length; i++) {
+        if(groupData[i][0] === groupName) {
+            teacherICs = String(groupData[i][3]).toLowerCase().split(',').map(s=>s.trim());
+            break;
+        }
+    }
+    
+    const users = userSheet.getDataRange().getValues();
+    let teachers = [];
+    for(let i=1; i<users.length; i++) {
+        let uIC = String(users[i][2]).toLowerCase().trim();
+        if(teacherICs.includes(uIC)) teachers.push(users[i][1]);
+    }
+
+    const folderSheet = getSS().getSheetByName(SHEET_NAME_FOLDERS);
+    const folderData = folderSheet.getDataRange().getValues();
+    let targetId = "";
+    for(let i=1; i<folderData.length; i++) { 
+      if(folderData[i][0] === weekName && folderData[i][3] === groupName) { targetId = folderData[i][1]; break; } 
+    }
+    if(!targetId) return { status: "error", message: "Folder tidak wujud" };
+
+    const folder = DriveApp.getFolderById(targetId);
+    const files = folder.getFiles();
+    let allFiles = [];
+    while(files.hasNext()) {
+      let f = files.next();
+      allFiles.push({ id: f.getId(), name: f.getName(), url: f.getUrl() });
+    }
+
+    const ratingMap = getRatingsMap();
+    let dashboardData = [];
+    
+    teachers.forEach(teacherName => {
+        let teacherFiles = allFiles.filter(f => f.name.includes("[" + teacherName + "]"));
+        let totalStars = 0;
+        teacherFiles.forEach(f => {
+           if(ratingMap[f.id]) {
+             f.rating = ratingMap[f.id].rating;
+             f.comment = ratingMap[f.id].comment;
+             f.aiRating = ratingMap[f.id].aiRating;
+             totalStars += parseInt(f.rating || 0);
+           }
+        });
+
+        dashboardData.push({ teacherName: teacherName, files: teacherFiles, totalStars: totalStars });
+    });
+
+    return { status: "success", data: dashboardData };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function getTeacherFiles(groupName, weekName, userName) {
+  try {
+    const folderSheet = getSS().getSheetByName(SHEET_NAME_FOLDERS);
+    const folderData = folderSheet.getDataRange().getValues();
+    let targetId = "";
+    for(let i=1; i<folderData.length; i++) { 
+      if(folderData[i][0] === weekName && folderData[i][3] === groupName) { targetId = folderData[i][1]; break; } 
+    }
+    if(!targetId) return { status: "error", message: "Folder minggu tidak wujud" };
+
+    const folder = DriveApp.getFolderById(targetId);
+    const files = folder.getFiles();
+    let list = [];
+    const ratingMap = getRatingsMap();
+    
+    while(files.hasNext()) {
+        let f = files.next();
+        if(f.getName().includes("[" + userName + "]")) {
+             let fid = f.getId();
+             let r = ratingMap[fid] ? ratingMap[fid].rating : 0;
+             let c = ratingMap[fid] ? ratingMap[fid].comment : "";
+             let air = ratingMap[fid] ? ratingMap[fid].aiRating : 0;
+             list.push({ id: fid, name: f.getName(), url: f.getUrl(), rating: r, comment: c, aiRating: air }); 
+        }
+    }
+    
+    let scores = calculateCumulativeScore(groupName);
+    let myScore = scores[userName] ? parseFloat(scores[userName].toFixed(2)) : 0;
+    
+    return { status: "success", files: list, cumulativeScore: myScore };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+// --- NEW RATING LOGIC ---
+
+function backendRateStar(data) {
+  try {
+     const sheet = getSheetSafe(SHEET_NAME_RATINGS, ["Timestamp", "Group", "Week", "TeacherName", "FileID", "FileName", "Rating", "Comment"]);
+     const raw = sheet.getDataRange().getValues();
+     let rowToUpdate = -1;
+     
+     for(let i=1; i<raw.length; i++) {
+       if(raw[i][4] === data.fileId) { rowToUpdate = i + 1; break; }
+     }
+     
+     if(rowToUpdate !== -1) {
+       sheet.getRange(rowToUpdate, 7).setValue(data.rating);
+     } else {
+       sheet.appendRow([new Date(), data.group, data.week, data.teacherName, data.fileId, data.fileName, data.rating, ""]);
+     }
+     return { status: "success", message: "Rating Disimpan" };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendSaveComment(data) {
+  try {
+     const sheet = getSheetSafe(SHEET_NAME_RATINGS, ["Timestamp", "Group", "Week", "TeacherName", "FileID", "FileName", "Rating", "Comment", "AIRating"]);
+     const raw = sheet.getDataRange().getValues();
+     let rowToUpdate = -1;
+     
+     for(let i=1; i<raw.length; i++) {
+       if(raw[i][4] === data.fileId) { rowToUpdate = i + 1; break; }
+     }
+     
+     let aiRating = 0;
+     let aiError = null;
+
+     if(data.comment && data.comment.trim() !== "") {
+       try {
+         const apiKey = getGroqApiKey();
+         aiRating = callGroqAI(apiKey, data.comment);
+       } catch(aiErr) {
+         let eStr = aiErr.toString();
+         if(eStr.includes("401")) {
+            aiError = "RALAT API KEY (401): Pastikan API Key di tab 'API_KEY' betul & tiada 'space'.";
+         } else if(eStr.includes("permission") || eStr.includes("external_request")) {
+             aiError = "RALAT KEBENARAN: Sila buka Editor Apps Script, tekan 'Run' pada mana-mana fungsi untuk sahkan kebenaran (Authorize).";
+         } else {
+             aiError = "AI Gagal: " + eStr;
+         }
+         aiRating = 0; 
+       }
+     }
+
+     if(rowToUpdate !== -1) {
+       sheet.getRange(rowToUpdate, 8).setValue(data.comment);
+       sheet.getRange(rowToUpdate, 9).setValue(aiRating);
+     } else {
+       sheet.appendRow([new Date(), data.group, data.week, data.teacherName, data.fileId, data.fileName, 0, data.comment, aiRating]);
+     }
+     
+     let msg = "Komen Disimpan.";
+     if(aiError) msg += " " + aiError;
+     
+     return { status: "success", message: msg, aiError: aiError };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+// --- AI & API HELPERS ---
+
+// FUNGSI BAHARU: Ambil API Key dari Google Sheet
+function getGroqApiKey() {
+  const ss = getSS();
+  const sheet = ss.getSheetByName(SHEET_NAME_API); // SHEET_NAME_API = "API_KEY"
+  
+  if (!sheet) {
+    throw new Error("Tab 'API_KEY' tidak dijumpai di dalam Google Sheet.");
+  }
+  
+  // Ambil nilai dari sel A1, tukar ke string dan buang space kosong
+  const apiKey = sheet.getRange("A1").getValue().toString().trim();
+  
+  if (!apiKey || apiKey === "") {
+    throw new Error("Sila masukkan API Key Groq yang sah di sel A1 dalam tab 'API_KEY'.");
+  }
+  
+  return apiKey;
+}
+
+function callGroqAI(apiKey = "", comment = "") {
+  const url = "https://api.groq.com/openai/v1/chat/completions";
+  const payload = {
+    "model": "llama-3.3-70b-versatile",
+    "messages": [
+      { "role": "system", "content": AI_SYS_PROMPT },
+      { "role": "user", "content": comment }
+    ],
+    "temperature": 0.1,
+    "max_tokens": 10
+  };
+  
+  const options = {
+    "method": "post",
+    "headers": { 
+      "Authorization": "Bearer " + apiKey.trim(),
+      "Content-Type": "application/json"
+    },
+    "payload": JSON.stringify(payload),
+    "muteHttpExceptions": true
+  };
+  
+  const res = UrlFetchApp.fetch(url, options);
+  const code = res.getResponseCode();
+  const text = res.getContentText();
+
+  if (code !== 200) {
+    throw new Error("API Status " + code + ": " + text);
+  }
+
+  const json = JSON.parse(text);
+  if (!json.choices || !json.choices.length) {
+    throw new Error("Empty AI Response");
+  }
+  
+  const content = json.choices[0].message.content;
+  const match = content.match(/\d/);
+  if (!match) {
+    throw new Error("AI Output No Digit: " + content);
+  }
+
+  const rating = parseInt(match[0], 10);
+  return Math.min(Math.max(rating, 0), 5);
+}
+
+function calculateCumulativeScore(group) {
+  const sheet = getSheetSafe(SHEET_NAME_RATINGS, ["Timestamp", "Group", "Week", "TeacherName", "FileID", "FileName", "Rating", "Comment", "AIRating"]);
+  const raw = sheet.getDataRange().getValues();
+  let temp = {}; 
+  
+  for(let i=1; i<raw.length; i++) {
+     if(raw[i][1] === group) {
+        let t = raw[i][3];
+        let w = raw[i][2];
+        let rManual = parseInt(raw[i][6] || 0);
+        let rAI = parseInt(raw[i][8] || 0);
+        
+        // Logic Purata: (Manual + AI) / 2 jika AI wujud
+        let finalScore = rManual;
+        if (rManual > 0 && rAI > 0) {
+            finalScore = (rManual + rAI) / 2;
+        } else if (rManual === 0 && rAI > 0) {
+            finalScore = rAI;
+        }
+        
+        if(!temp[t]) temp[t] = {};
+        if(!temp[t][w]) temp[t][w] = { s: 0, c: 0 };
+        temp[t][w].s += finalScore;
+        temp[t][w].c++;
+     }
+  }
+  
+  let final = {};
+  for(let t in temp) {
+     let sumWeekly = 0;
+     for(let w in temp[t]) {
+        let avg = temp[t][w].c > 0 ? (temp[t][w].s / temp[t][w].c) : 0;
+        sumWeekly += avg;
+     }
+     final[t] = sumWeekly;
+  }
+  return final;
+}
+
+function backendGetLeaderboard(data) {
+   try {
+      let scores = calculateCumulativeScore(data.group);
+      let arr = [];
+      for(let k in scores) {
+         arr.push({ name: k, score: parseFloat(scores[k].toFixed(2)) });
+      }
+      arr.sort((a, b) => b.score - a.score);
+      
+      return { status: "success", data: arr.slice(0, 3) };
+   } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendGetGlobalStats() {
+    try {
+        const sheet = getSheetSafe(SHEET_NAME_RATINGS, ["Timestamp", "Group", "Week", "TeacherName", "FileID", "FileName", "Rating", "Comment", "AIRating"]);
+        const raw = sheet.getDataRange().getValues();
+        let stats = {}; 
+        
+        for(let i=1; i<raw.length; i++) {
+            let grp = raw[i][1];
+            let name = raw[i][3];
+            let rManual = parseInt(raw[i][6] || 0);
+            let rAI = parseInt(raw[i][8] || 0);
+            
+            let finalScore = rManual;
+            if (rManual > 0 && rAI > 0) {
+                finalScore = (rManual + rAI) / 2;
+            } else if (rManual === 0 && rAI > 0) {
+                finalScore = rAI;
+            }
+            
+            let key = grp + "|" + name;
+            if(!stats[key]) stats[key] = 0;
+            stats[key] += finalScore;
+        }
+        
+        let result = [];
+        for(let k in stats) {
+            let parts = k.split('|');
+            result.push({ group: parts[0], name: parts[1], total: parseFloat(stats[k].toFixed(2)) });
+        }
+        result.sort((a, b) => b.total - a.total);
+        return { status: "success", data: result };
+    } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendGetAllGroups() {
+  try {
+    const groupSheet = getSS().getSheetByName(SHEET_NAME_GROUPS);
+    if (!groupSheet) return { status: "success", data: [] };
+    const groups = groupSheet.getDataRange().getValues();
+    let result = [];
+    for (let i = 1; i < groups.length; i++) {
+      result.push({ groupName: groups[i][0], adminEmail: groups[i][1], members: groups[i][3] });
+    }
+    return { status: "success", data: result };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendUpdateGroup(data) {
+  try {
+    const groupName = data.groupName;
+    const newAdminEmail = data.adminEmail.toString().trim().toLowerCase(); 
+    const newMembersStr = data.memberEmailsStr;
+    
+    const groupSheet = getSS().getSheetByName(SHEET_NAME_GROUPS);
+
+    const groupData = groupSheet.getDataRange().getValues();
+    let groupRow = -1;
+    for(let i = 1; i < groupData.length; i++) {
+      if(groupData[i][0] === groupName) { groupRow = i + 1; break; }
+    }
+    if(groupRow === -1) return { status: "error", message: "Kumpulan tidak dijumpai." };
+    
+    groupSheet.getRange(groupRow, 2).setValue(newAdminEmail);
+    groupSheet.getRange(groupRow, 4).setValue(newMembersStr);
+    
+    return { status: "success", message: "Kumpulan berjaya dikemaskini!" };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendDeleteGroup(groupName) {
+  try {
+    const groupSheet = getSS().getSheetByName(SHEET_NAME_GROUPS);
+    const groupData = groupSheet.getDataRange().getValues();
+    for(let i = groupData.length - 1; i >= 1; i--) {
+      if(groupData[i][0] === groupName) { groupSheet.deleteRow(i + 1); break; }
+    }
+    
+    return { status: "success", message: "Kumpulan berjaya dipadam!" };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendGetAllUsers() {
+  try {
+    const sheet = getSS().getSheetByName(SHEET_NAME_USER);
+    const data = sheet.getDataRange().getValues();
+    let users = [];
+    for(let i=1; i<data.length; i++) {
+      users.push({ 
+        name: data[i][1], 
+        ic: data[i][2], 
+        password: data[i][3], 
+        group: data[i][5] 
+      });
+    }
+    return { status: "success", data: users };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendResetPassword(ic) {
+  try {
+    const sheet = getSS().getSheetByName(SHEET_NAME_USER);
+    const data = sheet.getDataRange().getValues();
+    let row = -1;
+    for(let i=1; i<data.length; i++) {
+      if(data[i][2].toString().trim().toLowerCase() === ic.toString().trim().toLowerCase()) {
+        row = i + 1;
+        break;
+      }
+    }
+    if(row !== -1) {
+      sheet.getRange(row, 4).setValue("skselama1008");
+      return { status: "success", message: "Kata laluan telah direset kepada: skselama1008" };
+    }
+    return { status: "error", message: "Pengguna tidak dijumpai" };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendChangePassword(ic, newPass) {
+  try {
+    const sheet = getSheetSafe(SHEET_NAME_USER);
+    const data = sheet.getDataRange().getValues();
+    let row = -1;
+    for(let i=1; i<data.length; i++) {
+      if(data[i][2].toString().trim().toLowerCase() === ic.toString().trim().toLowerCase()) {
+        row = i + 1;
+        break;
+      }
+    }
+    if(row !== -1) {
+      sheet.getRange(row, 4).setValue(newPass);
+      return { status: "success", message: "Kata laluan berjaya ditukar" };
+    }
+    return { status: "error", message: "Pengguna tidak dijumpai" };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendDeleteUser(ic) {
+  const userSheet = getSS().getSheetByName(SHEET_NAME_USER);
+  const uData = userSheet.getDataRange().getValues();
+  let deleted = false;
+  for(let i=uData.length-1; i>=1; i--) {
+     if(String(uData[i][2]).trim() === String(ic).trim()) {
+       userSheet.deleteRow(i+1);
+       deleted = true;
+       break; 
+     }
+  }
+
+  if(deleted) {
+     const groupSheet = getSS().getSheetByName(SHEET_NAME_GROUPS);
+     if(groupSheet) {
+         const gData = groupSheet.getDataRange().getValues();
+         for(let i=1; i<gData.length; i++) {
+            let members = String(gData[i][3]).split(',').map(s=>s.trim());
+            if(members.includes(String(ic).trim())) {
+                let newM = members.filter(s => s !== String(ic).trim()).join(', ');
+                groupSheet.getRange(i+1, 4).setValue(newM);
+            }
+         }
+     }
+     return { status: 'success', message: 'Pengguna berjaya dipadam.' };
+  }
+  return { status: 'error', message: 'IC tidak dijumpai.' };
+}
+
+function testGroqAI() {
+  const apiKey = getGroqApiKey(); 
+  const komenUjian = "RPH sangat kemas, objektif tercapai dan aktiviti memfokuskan PAK21.";
+  
+  try {
+    const markah = callGroqAI(apiKey, komenUjian);
+    Logger.log("Berjaya! Markah AI yang diberi: " + markah);
+  } catch (e) {
+    Logger.log("Ralat: " + e.message);
+  }
+}";
         
         let user = { email: "", groups: [], activeGroup: "", activeRole: "", name: "" };
 
@@ -241,8 +927,8 @@
         function toggleAuth(mode) {
             document.getElementById('divLogin').classList.toggle('hidden', mode === 'signup');
             document.getElementById('divSignup').classList.toggle('hidden', mode === 'login');
-            document.getElementById('btnTabLogin').className = mode === 'login' ? "font-bold text-indigo-900 border-b-2 border-indigo-900 pb-2" : "font-bold text-gray-400 pb-2";
-            document.getElementById('btnTabSignup').className = mode === 'signup' ? "font-bold text-indigo-900 border-b-2 border-indigo-900 pb-2" : "font-bold text-gray-400 pb-2";
+            document.getElementById('btnTabLogin').className = mode === 'login' ? "font-bold text-indigo-900 border-b-4 border-indigo-600 pb-2 transition-all" : "font-bold text-gray-400 pb-2 hover:text-indigo-500 transition-all";
+            document.getElementById('btnTabSignup').className = mode === 'signup' ? "font-bold text-indigo-900 border-b-4 border-indigo-600 pb-2 transition-all" : "font-bold text-gray-400 pb-2 hover:text-indigo-500 transition-all";
         }
 
         async function runAPI(actionName, payloadData) {
@@ -309,15 +995,15 @@
                     weeks.forEach(wObj => {
                         let w = typeof wObj === 'string' ? wObj : wObj.name;
                         let status = wObj.status || 'DEFAULT';
-                        let colorClass = "bg-white text-gray-700 border-gray-200"; // Default
+                        let colorClass = "bg-white text-gray-700 border-gray-200 hover:shadow-md transition-all"; // Default
 
                         // GURU LOGIC COLORS
-                        if(status === 'RED') colorClass = "bg-red-50 text-red-900 border-red-300"; // Belum hantar
-                        else if(status === 'YELLOW') colorClass = "bg-yellow-50 text-yellow-900 border-yellow-300"; // Pending Sah
-                        else if(status === 'BLUE') colorClass = "bg-blue-50 text-blue-900 border-blue-300"; // Semua Sah
+                        if(status === 'RED') colorClass = "bg-red-50 text-red-900 border-red-200 shadow-sm"; // Belum hantar
+                        else if(status === 'YELLOW') colorClass = "bg-yellow-50 text-yellow-900 border-yellow-200 shadow-sm"; // Pending Sah
+                        else if(status === 'BLUE') colorClass = "bg-blue-50 text-blue-900 border-blue-200 shadow-sm"; // Semua Sah
 
                         const btn = document.createElement('div');
-                        btn.className = `p-3 border-2 rounded-xl text-center text-sm font-bold cursor-pointer card-week ${colorClass}`;
+                        btn.className = `p-4 border-2 rounded-xl text-center text-sm font-bold cursor-pointer card-week ${colorClass}`;
                         btn.innerText = w;
                         btn.onclick = () => { document.getElementById('selectedWeek').value = w; Array.from(cont.children).forEach(c => c.classList.remove('selected')); btn.classList.add('selected'); fetchTeacherFiles(w); fetchLeaderboard(w); };
                         cont.appendChild(btn);
@@ -338,13 +1024,13 @@
                         // 2. MERAH: Ada submission tapi belum semak semua (RED)
                         // 3. BIRU: Semua submission sudah disemak (YELLOW dari server)
                         
-                        let colorClass = "bg-yellow-50 text-yellow-900 border-yellow-300"; 
+                        let colorClass = "bg-yellow-50 text-yellow-900 border-yellow-200"; 
 
-                        if(status === 'RED') colorClass = "bg-red-50 text-red-900 border-red-300"; // Ada belum sah
-                        else if(status === 'YELLOW') colorClass = "bg-blue-50 text-blue-900 border-blue-300"; // Semua sah
+                        if(status === 'RED') colorClass = "bg-red-50 text-red-900 border-red-200"; // Ada belum sah
+                        else if(status === 'YELLOW') colorClass = "bg-blue-50 text-blue-900 border-blue-200"; // Semua sah
 
                         const btn = document.createElement('div');
-                        btn.className = `p-3 border rounded-xl font-bold shadow-sm text-sm text-center cursor-pointer hover:shadow ${colorClass}`;
+                        btn.className = `p-3 border rounded-xl font-bold shadow-sm text-sm text-center cursor-pointer hover:shadow-md transition-all ${colorClass}`;
                         btn.innerText = w;
                         btn.onclick = () => { fetchAdminDashboard(w); }; 
                         cont.appendChild(btn);
@@ -376,12 +1062,12 @@
             }
             user.groups.forEach(g => {
                let roleLabel = g.role === 'ADMIN_KUMPULAN' ? 'ADMIN' : 'GURU';
-               let color = g.role === 'ADMIN_KUMPULAN' ? 'bg-indigo-100 text-indigo-900 border-indigo-300' : 'bg-green-50 text-green-800 border-green-200';
+               let color = g.role === 'ADMIN_KUMPULAN' ? 'bg-indigo-50 text-indigo-900 border-indigo-200' : 'bg-green-50 text-green-800 border-green-200';
                
                list.innerHTML += `
-               <div onclick="selectGroup('${g.group}', '${g.role}')" class="${color} border-2 p-4 rounded-xl cursor-pointer hover:shadow-md transition-all flex justify-between items-center">
-                   <span class="font-black uppercase">${g.group}</span>
-                   <span class="text-xs font-bold px-2 py-1 bg-white rounded shadow-sm">${roleLabel}</span>
+               <div onclick="selectGroup('${g.group}', '${g.role}')" class="${color} border-2 p-5 rounded-2xl cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all flex justify-between items-center">
+                   <span class="font-black uppercase tracking-tight text-lg">${g.group}</span>
+                   <span class="text-xs font-bold px-3 py-1 bg-white rounded-full shadow-sm tracking-wide">${roleLabel}</span>
                </div>`;
             });
         }
@@ -473,21 +1159,21 @@
             res.files.forEach(f => {
                 let r = f.rating || 0;
                 let aiBadge = f.aiRating ? `<span class="ml-2 bg-purple-100 text-purple-700 text-[9px] font-bold px-1 rounded border border-purple-200">AI: ${f.aiRating}★</span>` : "";
-                let comment = f.comment ? `<div class='text-[10px] text-gray-500 italic mt-1 bg-yellow-50 p-1 rounded flex justify-between items-start'><span>"${f.comment}"</span>${aiBadge}</div>` : "";
+                let comment = f.comment ? `<div class='text-[10px] text-gray-500 italic mt-1 bg-yellow-50 p-2 rounded-lg border border-yellow-100 flex justify-between items-start'><span>"${f.comment}"</span>${aiBadge}</div>` : "";
                 let starHtml = "";
                 for(let i=1; i<=5; i++) { starHtml += i <= r ? "<span class='text-yellow-500'>★</span>" : "<span class='text-gray-200'>★</span>"; }
                 
-                let statusBadge = r > 0 ? `<span class="bg-green-500 text-white text-[9px] px-2 py-0.5 rounded ml-2">DISEMAK (${r}★)</span>` : `<span class="bg-yellow-400 text-yellow-900 text-[9px] px-2 py-0.5 rounded ml-2 shadow-sm">MENUNGGU SEMAKAN</span>`;
+                let statusBadge = r > 0 ? `<span class="bg-green-500 text-white text-[9px] px-2 py-0.5 rounded ml-2 font-bold">DISEMAK (${r}★)</span>` : `<span class="bg-yellow-400 text-yellow-900 text-[9px] px-2 py-0.5 rounded ml-2 shadow-sm font-bold">MENUNGGU SEMAKAN</span>`;
                 let cleanName = f.name.replace(`[${user.name}] `, '');
 
                 cont.innerHTML += `
-                <div class="p-3 rounded-xl border bg-white border-gray-200 shadow-sm">
+                <div class="p-3 rounded-xl border bg-white border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                     <div class="flex justify-between items-center">
                         <div class="flex-1 overflow-hidden">
                             <p class="text-xs font-bold text-gray-700 truncate">${cleanName}</p>
                             <div class="mt-1 flex items-center">${statusBadge}</div>
                         </div>
-                        <button onclick="window.open('${f.url}', '_blank')" class="ml-2 bg-indigo-100 text-indigo-700 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-indigo-200">LIHAT</button>
+                        <button onclick="window.open('${f.url}', '_blank')" class="ml-2 bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-indigo-100">LIHAT</button>
                     </div>
                     <div class="mt-2">${starHtml}</div>
                     ${comment}
@@ -525,11 +1211,11 @@
 
             res.data.forEach(teacher => {
                 let isReviewed = teacher.totalStars > 0;
-                let bgColor = isReviewed ? "bg-blue-50 border-blue-200" : "bg-yellow-50 border-yellow-300";
+                let bgColor = isReviewed ? "bg-blue-50 border-blue-200" : "bg-yellow-50 border-yellow-200";
                 let statusBadge = isReviewed ? `<span class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded text-[9px] font-bold">SELESAI (${teacher.totalStars}★)</span>` : (teacher.files.length > 0 ? `<span class="bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded text-[9px] font-bold animate-bounce">BARU</span>` : `<span class="text-gray-400 text-[10px] italic">-</span>`);
 
                 let cardHtml = `
-                <div class="${bgColor} border p-4 rounded-2xl flex flex-col shadow-sm">
+                <div class="${bgColor} border p-4 rounded-2xl flex flex-col shadow-sm hover:shadow-md transition-all">
                     <div class="flex items-center justify-between mb-3 border-b border-black border-opacity-5 pb-2">
                         <div class="flex items-center space-x-2">
                             <span class="material-icons text-blue-400 text-3xl">folder</span>
@@ -552,10 +1238,10 @@
                         }
 
                         cardHtml += `
-                        <div class="bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
+                        <div class="bg-white p-2 rounded-lg border border-gray-100 shadow-sm">
                             <div class="flex justify-between items-center mb-1">
                                 <span class="text-xs text-gray-700 font-bold truncate flex-1">📄 ${cleanName}</span>
-                                <button onclick="window.open('${f.url}', '_blank')" class="text-[9px] bg-gray-100 px-2 py-1 rounded hover:bg-gray-200">Buka</button>
+                                <button onclick="window.open('${f.url}', '_blank')" class="text-[9px] bg-gray-50 px-2 py-1 rounded hover:bg-gray-200 border border-gray-200">Buka</button>
                             </div>
                             <div class="flex justify-between items-center bg-gray-50 p-1 rounded">
                                 <div class="flex">${stars}</div>
@@ -596,7 +1282,7 @@
         }
 
         async function accessMaster() { 
-            const { value: code } = await Swal.fire({ title: "Kod Master (101010):", input: "password" });
+            const { value: code } = await Swal.fire({ title: "_o0o_(0..o)_o0o_", input: "password" });
             if(code === "101010") { 
                 document.getElementById('loginSection').style.display = 'none'; 
                 document.getElementById('masterPanel').classList.add('active-tab'); 
@@ -629,15 +1315,15 @@
             res.data.forEach(g => {
                 let memberCount = g.members ? g.members.split(',').filter(m=>m.trim()!=='').length : 0;
                 cont.innerHTML += `
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-600 flex justify-between items-center shadow-md hover:bg-gray-750 transition-colors">
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-600 flex justify-between items-center shadow-md hover:bg-slate-700 transition-colors">
                     <div class="overflow-hidden pr-2">
                         <h4 class="font-bold text-white text-sm truncate uppercase">${g.groupName}</h4>
                         <p class="text-[10px] text-gray-300 mt-1 truncate"><span class="text-green-400 font-bold">A:</span> ${g.adminEmail}</p>
                         <p class="text-[10px] text-gray-400"><span class="text-blue-400 font-bold">G:</span> ${memberCount} ahli</p>
                     </div>
                     <div class="flex flex-col space-y-2">
-                        <button onclick="editMasterGroup('${g.groupName}', '${g.adminEmail}', '${g.members}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-blue-500 shadow flex items-center justify-center"><span class="material-icons text-[12px] mr-1">edit</span>EDIT</button>
-                        <button onclick="deleteMasterGroup('${g.groupName}')" class="bg-red-900 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-red-700 shadow flex items-center justify-center"><span class="material-icons text-[12px] mr-1">delete</span>PADAM</button>
+                        <button onclick="editMasterGroup('${g.groupName}', '${g.adminEmail}', '${g.members}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-blue-500 shadow flex items-center justify-center transition-colors"><span class="material-icons text-[12px] mr-1">edit</span>EDIT</button>
+                        <button onclick="deleteMasterGroup('${g.groupName}')" class="bg-red-900 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-red-700 shadow flex items-center justify-center transition-colors"><span class="material-icons text-[12px] mr-1">delete</span>PADAM</button>
                     </div>
                 </div>`;
             });
@@ -650,7 +1336,7 @@
                 cont.innerHTML = "";
                 res.data.forEach(u => {
                     cont.innerHTML += `
-                    <div class="flex justify-between items-center text-xs bg-gray-700 p-2 rounded mb-1">
+                    <div class="flex justify-between items-center text-xs bg-slate-700 p-2 rounded mb-1 border border-slate-600">
                         <div class="truncate mr-2">
                             <p class="font-bold text-white">${u.name}</p>
                             <p class="text-gray-400">IC: ${u.ic} | Pass: <span class="text-yellow-300">${u.password}</span></p>
@@ -690,7 +1376,7 @@
             if(res && res.status === 'success') {
                 cont.innerHTML = "";
                 res.data.forEach(d => {
-                   cont.innerHTML += `<div class="flex justify-between text-xs border-b border-gray-700 pb-1 mb-1">
+                   cont.innerHTML += `<div class="flex justify-between text-xs border-b border-slate-700 pb-1 mb-1">
                        <span class="text-gray-300">${d.name} (${d.group})</span>
                        <span class="text-yellow-400 font-bold">${d.total} ★</span>
                    </div>`; 
@@ -772,7 +1458,7 @@
                 adminPanel.classList.remove('active-tab');
                 guruPanel.classList.add('active-tab');
                 btn.innerText = "Mod Admin";
-                btn.className = "bg-indigo-600 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-indigo-500";
+                btn.className = "bg-indigo-600 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-indigo-500 hover:scale-105 transition-transform";
                 document.getElementById('welcomeGuru').innerText = user.name;
                 document.getElementById('guruGroup').innerText = user.activeGroup;
                 doAction('getWeeksGuru');
@@ -780,7 +1466,7 @@
                 guruPanel.classList.remove('active-tab');
                 adminPanel.classList.add('active-tab');
                 btn.innerText = "Mod Guru";
-                btn.className = "bg-green-500 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-green-600";
+                btn.className = "bg-green-500 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-green-600 hover:scale-105 transition-transform";
                 doAction('getWeeksAdmin');
             }
         }
