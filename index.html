@@ -31,6 +31,7 @@
                 <span class="font-bold uppercase tracking-widest text-lg">eRPH Cloud</span>
             </div>
             <div class="flex space-x-2">
+                <button id="groupBtn" onclick="showGroupSelection()" class="hidden bg-indigo-700 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-indigo-600">Senarai Kumpulan</button>
                 <button id="switchRoleBtn" onclick="switchRoleView()" class="hidden bg-green-500 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-green-600">Mod Guru</button>
                 <button id="changePassBtn" onclick="changeOwnPassword()" class="hidden bg-yellow-500 px-3 py-2 rounded-full text-xs font-bold text-black shadow-lg hover:bg-yellow-400">Tukar Pass</button>
                 <button id="logoutBtn" onclick="doLogout()" class="hidden bg-red-500 px-4 py-2 rounded-full text-xs font-bold shadow-lg">Log Keluar</button>
@@ -55,6 +56,14 @@
                 <input type="text" id="regIC" placeholder="No. Kad Pengenalan (Tanpa -)" class="w-full border p-3 rounded-xl bg-gray-50">
                 <input type="password" id="regPass" placeholder="Cipta Kata Laluan" class="w-full border p-3 rounded-xl bg-gray-50">
                 <button onclick="doAction('signup')" class="w-full bg-gray-800 text-white py-4 rounded-2xl font-bold">HANTAR PENDAFTARAN</button>
+            </div>
+        </div>
+
+        <!-- NEW: GROUP SELECTION PANEL -->
+        <div id="groupSelectionPanel" class="tab-content bg-white p-6 rounded-3xl shadow-xl mt-6">
+            <h2 class="text-xl font-black text-indigo-900 mb-4 uppercase text-center">Pilih Kumpulan Anda</h2>
+            <div id="groupListContainer" class="space-y-3">
+                <!-- Buttons injected here -->
             </div>
         </div>
 
@@ -150,7 +159,7 @@
                     
                     <div>
                         <label class="text-[10px] text-gray-400 font-bold uppercase ml-1">IC Admin Kumpulan</label>
-                        <input type="text" id="mGAdmin" placeholder="No. IC Guru Besar/Pengetua" class="w-full p-4 rounded-xl mt-1 bg-gray-100 focus:bg-white transition-all">
+                        <input type="text" id="mGAdmin" placeholder="No. IC Admin (Boleh lebih dari satu, pisahkan koma)" class="w-full p-4 rounded-xl mt-1 bg-gray-100 focus:bg-white transition-all">
                     </div>
                     
                     <div>
@@ -168,9 +177,9 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbzTs800M-1Fdb4mPmsvOXmDe5vCUCcfGYDxEWj4OG2mjI-uI9r5W1al6J09KokkOlXv0Q/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxfz_b6ubYLyjCXq2rk1TllUZXiCVExvJcaVF4PV7PrAcJMKnZGsNJoG5-3d5-cVHSU1w/exec";
         
-        let user = { email: "", group: "", name: "" };
+        let user = { email: "", groups: [], activeGroup: "", activeRole: "", name: "" };
 
         // --- SESSION RESTORE LOGIC ---
         try {
@@ -184,17 +193,7 @@
                         document.getElementById('loginSection').style.display = 'none';
                         document.getElementById('logoutBtn').classList.remove('hidden');
                         document.getElementById('changePassBtn').classList.remove('hidden');
-                        if(user.role === "ADMIN_KUMPULAN") {
-                            document.getElementById('adminPanel').classList.add('active-tab');
-                            document.getElementById('adminGroupName').innerText = user.group;
-                            document.getElementById('switchRoleBtn').classList.remove('hidden');
-                            setTimeout(()=>doAction('getWeeksAdmin'), 500);
-                        } else {
-                            document.getElementById('guruPanel').classList.add('active-tab');
-                            document.getElementById('welcomeGuru').innerText = user.name;
-                            document.getElementById('guruGroup').innerText = user.group;
-                            setTimeout(()=>doAction('getWeeksGuru'), 500);
-                        }
+                        showGroupSelection();
                     });
                 }
             }
@@ -244,25 +243,21 @@
                     if (res.error) return alert("Ralat Server: " + res.error);
                     if (!res.found) return alert("GAGAL: " + res.message);
                     
-                    user = res;
-                    user.ic = ic; // Ensure IC is saved
+                    // Updated User Object
+                    user = {
+                        name: res.name,
+                        email: res.email,
+                        ic: ic,
+                        groups: res.groups || [] // List of { group, role }
+                    };
+                    
                     localStorage.setItem('erph_session', JSON.stringify(user));
 
                     document.getElementById('loginSection').style.display = 'none';
                     document.getElementById('logoutBtn').classList.remove('hidden');
                     document.getElementById('changePassBtn').classList.remove('hidden');
                     
-                    if(res.role === "ADMIN_KUMPULAN") {
-                        document.getElementById('adminPanel').classList.add('active-tab');
-                        document.getElementById('adminGroupName').innerText = res.group;
-                        document.getElementById('switchRoleBtn').classList.remove('hidden');
-                        doAction('getWeeksAdmin');
-                    } else {
-                        document.getElementById('guruPanel').classList.add('active-tab');
-                        document.getElementById('welcomeGuru').innerText = res.name;
-                        document.getElementById('guruGroup').innerText = res.group;
-                        doAction('getWeeksGuru');
-                    }
+                    showGroupSelection();
                 } 
                 else if (action === 'signup') {
                     const d = { name: document.getElementById('regName').value, ic: document.getElementById('regIC').value, pass: document.getElementById('regPass').value };
@@ -272,7 +267,7 @@
                     showLoading(false); if(res) { alert(res); toggleAuth('login'); }
                 }
                 else if (action === 'getWeeksGuru') {
-                    const weeks = await runAPI('getWeeks', { group: user.group });
+                    const weeks = await runAPI('getWeeks', { group: user.activeGroup });
                     if(!weeks) return;
                     const cont = document.getElementById('weekList');
                     cont.innerHTML = weeks.length ? "" : "<p class='text-xs text-red-500 col-span-2'>Tiada folder.</p>";
@@ -285,7 +280,7 @@
                     });
                 }
                 else if (action === 'getWeeksAdmin') {
-                    const weeks = await runAPI('getWeeks', { group: user.group });
+                    const weeks = await runAPI('getWeeks', { group: user.activeGroup });
                     if(!weeks) return;
                     const cont = document.getElementById('adminWeekList');
                     cont.innerHTML = weeks.length ? "" : "<p class='text-xs text-gray-500 col-span-2'>Sila cipta minggu.</p>";
@@ -301,11 +296,56 @@
                     const n = prompt("Nama Minggu (Cth: MINGGU 1):");
                     if(!n) return;
                     showLoading(true, "MENCIPTA FOLDER...");
-                    const res = await runAPI('createWeek', { weekName: n, group: user.group });
+                    const res = await runAPI('createWeek', { weekName: n, group: user.activeGroup });
                     showLoading(false); 
                     if(res) { alert(res.message); if(res.status === 'success') doAction('getWeeksAdmin'); }
                 }
             } catch (error) { showLoading(false); }
+        }
+
+        function showGroupSelection() {
+            document.getElementById('guruPanel').classList.remove('active-tab');
+            document.getElementById('adminPanel').classList.remove('active-tab');
+            document.getElementById('groupSelectionPanel').classList.add('active-tab');
+            document.getElementById('groupBtn').classList.add('hidden');
+            document.getElementById('switchRoleBtn').classList.add('hidden');
+
+            const list = document.getElementById('groupListContainer');
+            list.innerHTML = "";
+            if(user.groups.length === 0) {
+                list.innerHTML = "<p class='text-center text-red-500 font-bold'>Anda belum didaftarkan dalam mana-mana kumpulan.</p>";
+                return;
+            }
+            user.groups.forEach(g => {
+               let roleLabel = g.role === 'ADMIN_KUMPULAN' ? 'ADMIN' : 'GURU';
+               let color = g.role === 'ADMIN_KUMPULAN' ? 'bg-indigo-100 text-indigo-900 border-indigo-300' : 'bg-green-50 text-green-800 border-green-200';
+               
+               list.innerHTML += `
+               <div onclick="selectGroup('${g.group}', '${g.role}')" class="${color} border-2 p-4 rounded-xl cursor-pointer hover:shadow-md transition-all flex justify-between items-center">
+                   <span class="font-black uppercase">${g.group}</span>
+                   <span class="text-xs font-bold px-2 py-1 bg-white rounded shadow-sm">${roleLabel}</span>
+               </div>`;
+            });
+        }
+
+        function selectGroup(gName, gRole) {
+            user.activeGroup = gName;
+            user.activeRole = gRole;
+            document.getElementById('groupSelectionPanel').classList.remove('active-tab');
+            document.getElementById('groupBtn').classList.remove('hidden');
+
+            if (gRole === "ADMIN_KUMPULAN") {
+                document.getElementById('adminPanel').classList.add('active-tab');
+                document.getElementById('adminGroupName').innerText = gName;
+                document.getElementById('switchRoleBtn').classList.remove('hidden');
+                doAction('getWeeksAdmin');
+            } else {
+                document.getElementById('guruPanel').classList.add('active-tab');
+                document.getElementById('welcomeGuru').innerText = user.name;
+                document.getElementById('guruGroup').innerText = gName;
+                document.getElementById('switchRoleBtn').classList.add('hidden'); // Guru cannot switch
+                doAction('getWeeksGuru');
+            }
         }
 
         function uploadRPH() {
@@ -316,7 +356,7 @@
             showLoading(true, "MUAT NAIK FAIL...");
             const reader = new FileReader();
             reader.onload = async function(e) {
-                const payload = { data: e.target.result.split(',')[1], mimeType: f.type, fileName: f.name, week: wk, group: user.group, userName: user.name };
+                const payload = { data: e.target.result.split(',')[1], mimeType: f.type, fileName: f.name, week: wk, group: user.activeGroup, userName: user.name };
                 const res = await runAPI('upload', payload);
                 showLoading(false);
                 if(res && res.includes("http")) { alert("RPH berjaya dihantar!"); document.getElementById('fileInp').value = ""; fetchTeacherFiles(wk); } 
@@ -331,7 +371,7 @@
             const cont = document.getElementById('teacherFileList');
             cont.innerHTML = "<p class='text-xs text-gray-400 italic animate-pulse'>Menyemak fail anda...</p>";
 
-            const res = await runAPI('getTeacherFiles', { group: user.group, week: weekName, userName: user.name });
+            const res = await runAPI('getTeacherFiles', { group: user.activeGroup, week: weekName, userName: user.name });
 
             if(!res || res.status === "error") return cont.innerHTML = `<p class='text-xs text-red-500'>Tiada folder.</p>`;
             if(res.files.length === 0) return cont.innerHTML = `<p class='text-xs text-gray-500 italic'>Belum ada RPH dihantar.</p>`;
@@ -366,7 +406,7 @@
 
         async function fetchLeaderboard(weekName) {
             document.getElementById('leaderboardArea').classList.add('hidden');
-            const res = await runAPI('getLeaderboard', { group: user.group, week: weekName });
+            const res = await runAPI('getLeaderboard', { group: user.activeGroup, week: weekName });
             if(res && res.data && res.data.length > 0) {
                  const list = document.getElementById('leaderboardList');
                  list.innerHTML = "";
@@ -387,7 +427,7 @@
             const cont = document.getElementById('adminTeacherGrid');
             cont.innerHTML = "<p class='text-xs text-center text-gray-500 animate-pulse col-span-2'>Menyusun fail guru...</p>";
 
-            const res = await runAPI('getAdminSubmissionsData', { group: user.group, week: weekName });
+            const res = await runAPI('getAdminSubmissionsData', { group: user.activeGroup, week: weekName });
             if(!res || res.status === "error") return cont.innerHTML = `<p class='text-red-500 text-xs col-span-2'>${res?res.message:'Ralat sistem'}</p>`;
             cont.innerHTML = "";
             if(res.data.length === 0) return cont.innerHTML = "<p class='text-xs text-gray-500 col-span-2'>Tiada cikgu berdaftar.</p>";
@@ -443,7 +483,7 @@
         async function rateFile(fid, rating, tName, fName) {
             showLoading(true, "MENILAI " + rating + " BINTANG...");
             const wk = document.getElementById('viewingWeek').innerText;
-            const res = await runAPI('rateStar', { fileId: fid, rating: rating, group: user.group, week: wk, teacherName: tName, fileName: fName });
+            const res = await runAPI('rateStar', { fileId: fid, rating: rating, group: user.activeGroup, week: wk, teacherName: tName, fileName: fName });
             showLoading(false);
             if(res && res.status === "success") { fetchAdminDashboard(wk); }
         }
@@ -453,7 +493,7 @@
             if(c === null) return;
             showLoading(true, "MENYIMPAN ULASAN...");
             const wk = document.getElementById('viewingWeek').innerText;
-            const res = await runAPI('saveComment', { fileId: fid, comment: c, group: user.group, week: wk, teacherName: tName, fileName: fName });
+            const res = await runAPI('saveComment', { fileId: fid, comment: c, group: user.activeGroup, week: wk, teacherName: tName, fileName: fName });
             showLoading(false);
             if(res && res.status === "success") { fetchAdminDashboard(wk); }
         }
@@ -633,7 +673,7 @@
                 btn.innerText = "Mod Admin";
                 btn.className = "bg-indigo-600 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-indigo-500";
                 document.getElementById('welcomeGuru').innerText = user.name;
-                document.getElementById('guruGroup').innerText = user.group;
+                document.getElementById('guruGroup').innerText = user.activeGroup;
                 doAction('getWeeksGuru');
             } else {
                 guruPanel.classList.remove('active-tab');
