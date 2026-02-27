@@ -74,7 +74,7 @@
                     <p class="text-sm text-gray-500 mb-6">Kumpulan: <span id="guruGroup" class="font-bold text-indigo-600"></span></p>
                 </div>
                 <div id="myStats" class="bg-yellow-100 p-2 rounded-xl text-center border border-yellow-300">
-                    <p class="text-[10px] font-bold text-yellow-800 uppercase">Minggu Ini</p>
+                    <p class="text-[10px] font-bold text-yellow-800 uppercase">Markah Terkumpul</p>
                     <div class="flex items-center justify-center space-x-1">
                         <span class="material-icons text-yellow-600 text-sm">star</span>
                         <span id="myWeeklyStars" class="font-black text-xl text-yellow-900">0</span>
@@ -83,7 +83,7 @@
             </div>
             
             <div id="leaderboardArea" class="mb-6 bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-2xl border border-indigo-100 hidden">
-                <h3 class="text-xs font-bold text-indigo-900 uppercase mb-2 flex items-center"><span class="material-icons text-sm mr-1">emoji_events</span> TOP 3 MINGGUAN</h3>
+                <h3 class="text-xs font-bold text-indigo-900 uppercase mb-2 flex items-center"><span class="material-icons text-sm mr-1">emoji_events</span> TOP 3 TERKUMPUL</h3>
                 <div id="leaderboardList" class="space-y-2"></div>
             </div>
 
@@ -154,7 +154,7 @@
                     
                     <div>
                         <label class="text-[10px] text-gray-400 font-bold uppercase ml-1">Nama Kumpulan (Unik)</label>
-                        <input type="text" id="mGName" placeholder="Contoh: PENTADBIR" class="w-full p-4 rounded-xl mt-1 bg-gray-100 focus:bg-white transition-all">
+                        <input type="text" id="mGName" placeholder="Contoh: SK BANDAR BARU" class="w-full p-4 rounded-xl mt-1 bg-gray-100 focus:bg-white transition-all">
                     </div>
                     
                     <div>
@@ -177,7 +177,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbxfz_b6ubYLyjCXq2rk1TllUZXiCVExvJcaVF4PV7PrAcJMKnZGsNJoG5-3d5-cVHSU1w/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxwtwEyE3GWXZuReExu4ZY8JFmnxQUHsmFR_3rpLw8DIsC1BBhPYu6xymjgjFGPW4lSvA/exec";
         
         let user = { email: "", groups: [], activeGroup: "", activeRole: "", name: "" };
 
@@ -374,13 +374,15 @@
             const res = await runAPI('getTeacherFiles', { group: user.activeGroup, week: weekName, userName: user.name });
 
             if(!res || res.status === "error") return cont.innerHTML = `<p class='text-xs text-red-500'>Tiada folder.</p>`;
+            
+            // Update Cumulative Score Display
+            document.getElementById('myWeeklyStars').innerText = res.cumulativeScore || 0;
+
             if(res.files.length === 0) return cont.innerHTML = `<p class='text-xs text-gray-500 italic'>Belum ada RPH dihantar.</p>`;
 
             cont.innerHTML = "";
-            let totalStars = 0;
             res.files.forEach(f => {
                 let r = f.rating || 0;
-                totalStars += parseInt(r);
                 let comment = f.comment ? `<div class='text-[10px] text-gray-500 italic mt-1 bg-yellow-50 p-1 rounded'>"${f.comment}"</div>` : "";
                 let starHtml = "";
                 for(let i=1; i<=5; i++) { starHtml += i <= r ? "<span class='text-yellow-500'>★</span>" : "<span class='text-gray-200'>★</span>"; }
@@ -401,7 +403,6 @@
                     ${comment}
                 </div>`;
             });
-            document.getElementById('myWeeklyStars').innerText = totalStars;
         }
 
         async function fetchLeaderboard(weekName) {
@@ -686,4 +687,3 @@
     </script>
 </body>
 </html>
-
