@@ -56,7 +56,7 @@
                 <span class="material-icons">cloud_done</span>
                 <span class="font-bold uppercase tracking-widest text-lg">eRPH Cloud</span>
             </div>
-            <button id="logoutBtn" onclick="location.reload()" class="hidden bg-red-500 px-4 py-2 rounded-full text-xs font-bold shadow-lg">Log Keluar</button>
+            <button id="logoutBtn" onclick="logoutUser()" class="hidden bg-red-500 px-4 py-2 rounded-full text-xs font-bold shadow-lg">Log Keluar</button>
         </div>
     </nav>
 
@@ -159,12 +159,43 @@
     </div>
 
     <script>
-        // ⚠️ PASTIKAN URL APP SCRIPT INI ADALAH URL YANG BARU DI-DEPLOY
-        const API_URL = "https://script.google.com/macros/s/AKfycbw4AgxdfAfZxAfLVBztsDLHj4aLLOAn33JltDWJ9hVwB0ReQeXyExq2HiX35d3PxHkkWQ/exec";
+        // ⚠️ MASUKKAN URL APP SCRIPT CIKGU DI SINI
+        const API_URL = "https://script.google.com/macros/s/AKfycbw4YEjST8tS3ITRlc43yEr013V_etd9gR7paGjQ6tHLW9ZiUraNmU8gujhhtxpItQTX2w/exec";
         
         let user = { email: "", group: "", name: "" };
         let canvas, ctx, isDrawing = false;
         let currentFileId = null;
+
+        // ==========================================
+        // FUNGSI KEKALKAN SESI LOG MASUK (LOCALSTORAGE)
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedSession = localStorage.getItem('eRPH_UserSession');
+            if (savedSession) {
+                user = JSON.parse(savedSession);
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('logoutBtn').classList.remove('hidden');
+
+                if (user.role === "MASTER") {
+                    document.getElementById('masterPanel').classList.add('active-tab');
+                    fetchMasterGroups();
+                } else if (user.role === "ADMIN_KUMPULAN") {
+                    document.getElementById('adminPanel').classList.add('active-tab');
+                    document.getElementById('adminGroupName').innerText = user.group;
+                    doAction('getWeeksAdmin');
+                } else {
+                    document.getElementById('guruPanel').classList.add('active-tab');
+                    document.getElementById('welcomeGuru').innerText = user.name;
+                    document.getElementById('guruGroup').innerText = user.group;
+                    doAction('getWeeksGuru');
+                }
+            }
+        });
+
+        function logoutUser() {
+            localStorage.removeItem('eRPH_UserSession'); // Padam sesi dari browser
+            location.reload(); // Muat semula halaman
+        }
 
         function showLoading(s, txt="SEDANG MEMPROSES...") { 
             document.getElementById('loading').style.display = s ? 'flex' : 'none'; 
@@ -206,6 +237,9 @@
                     if (!res.found) return alert("GAGAL: " + res.message);
                     
                     user = res;
+                    // SIMPAN SESI KE DALAM BROWSER
+                    localStorage.setItem('eRPH_UserSession', JSON.stringify(user)); 
+
                     document.getElementById('loginSection').style.display = 'none';
                     document.getElementById('logoutBtn').classList.remove('hidden');
                     
@@ -391,27 +425,14 @@
         }
         function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
-        async function saveSemakan() {
-            if(!currentFileId) return;
-            const finalCanvas = document.createElement('canvas'); finalCanvas.width = canvas.width; finalCanvas.height = canvas.height;
-            const fCtx = finalCanvas.getContext('2d');
-            try {
-                fCtx.drawImage(document.getElementById('reviewImage'), 0, 0, finalCanvas.width, finalCanvas.height); fCtx.drawImage(canvas, 0, 0);
-                const base64Data = finalCanvas.toDataURL('image/png').split(',')[1];
-                showLoading(true, "MENYIMPAN SEMAKAN...");
-                const res = await runAPI('saveAnnotation', { fileId: currentFileId, image: base64Data });
-                showLoading(false);
-                if(res && res.status === "success") { alert("Semakan berjaya disimpan!"); closeReview(); fetchAdminDashboard(document.getElementById('viewingWeek').innerText); } 
-                else alert("Gagal disimpan.");
-            } catch (err) { showLoading(false); alert("Ralat menyimpan fail."); }
-        }
-
         // ==========================================
-        // FUNGSI MASTER ADMIN (BAHARU)
+        // FUNGSI MASTER ADMIN
         // ==========================================
-
         function accessMaster() { 
             if(prompt("Kod Master (101010):") === "101010") { 
+                user = { role: "MASTER", name: "MASTER ADMIN" };
+                localStorage.setItem('eRPH_UserSession', JSON.stringify(user)); // Simpan sesi Master
+
                 document.getElementById('loginSection').style.display = 'none'; 
                 document.getElementById('masterPanel').classList.add('active-tab'); 
                 document.getElementById('logoutBtn').classList.remove('hidden');
@@ -449,7 +470,7 @@
             document.getElementById('mGMode').value = "edit";
             document.getElementById('mGName').value = gName;
             document.getElementById('mGName').readOnly = true; 
-            document.getElementById('mGName').classList.add('opacity-50', 'cursor-not-allowed'); // Elak tukar nama sbb ia kunci folder utama
+            document.getElementById('mGName').classList.add('opacity-50', 'cursor-not-allowed'); 
             document.getElementById('mGAdmin').value = gAdmin;
             document.getElementById('mGMembers').value = gMembers;
 
@@ -507,6 +528,21 @@
                 if (res && res.status === "success") { alert(res.message); resetMasterForm(); fetchMasterGroups(); }
                 else if (res) { alert(res.message); }
             }
+        }
+        
+        async function saveSemakan() {
+            if(!currentFileId) return;
+            const finalCanvas = document.createElement('canvas'); finalCanvas.width = canvas.width; finalCanvas.height = canvas.height;
+            const fCtx = finalCanvas.getContext('2d');
+            try {
+                fCtx.drawImage(document.getElementById('reviewImage'), 0, 0, finalCanvas.width, finalCanvas.height); fCtx.drawImage(canvas, 0, 0);
+                const base64Data = finalCanvas.toDataURL('image/png').split(',')[1];
+                showLoading(true, "MENYIMPAN SEMAKAN...");
+                const res = await runAPI('saveAnnotation', { fileId: currentFileId, image: base64Data });
+                showLoading(false);
+                if(res && res.status === "success") { alert("Semakan berjaya disimpan!"); closeReview(); fetchAdminDashboard(document.getElementById('viewingWeek').innerText); } 
+                else alert("Gagal disimpan.");
+            } catch (err) { showLoading(false); alert("Ralat menyimpan fail."); }
         }
     </script>
 </body>
