@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eRPH Cloud 111</title>
+    <title>eRPH Cloud 22</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
@@ -49,7 +49,7 @@
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <span class="material-icons">cloud_done</span>
-                <span class="font-black text-lg tracking-tighter uppercase">eRPH Cloud 111</span>
+                <span class="font-black text-lg tracking-tighter uppercase">eRPH Cloud 22</span>
             </div>
             <button id="logoutBtn" onclick="location.reload()" class="hidden bg-red-500 p-2 rounded-full hover:bg-red-600 transition"><span class="material-icons text-sm">power_settings_new</span></button>
         </div>
@@ -242,7 +242,12 @@ MASUK</button>
             // Pass currentGroup to ensure folder is created under the Group, not just email
             runCloud('backendCreateFolder', [name, currentGroup, currentUserEmail], res => {
                 showLoading(false);
-                alert(res);
+                // FIX: Check if res is object to avoid [object Object]
+                if(typeof res === 'object' && res !== null) {
+                    alert(res.message || res.error || JSON.stringify(res));
+                } else {
+                    alert(res);
+                }
                 loadAdminWeekDropdown(); // Refresh dropdown
             });
         }
