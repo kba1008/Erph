@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eRPH Cloud 551</title>
+    <title>eRPH Cloud 456</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
@@ -124,7 +124,7 @@
 
     <script>
         // MASUKKAN URL WEB APP ANDA DI SINI
-        const API_URL = "https://script.google.com/macros/s/AKfycbwkf1_VUpj1sX1pzyLQYGTEqfqMJ1G_OBMt00TbX2GMxTTTSJnn0GjTNoH7H3_SMNvp7A/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbzho3l0aJiqiZGtSmfd5DiF3-9gOf1eVoiCS9I8GfN-Rk3U--EpIKSBpFROXPxgYkmEBQ/exec";
         let user = { email: "", group: "", name: "" };
         
         // --- VARIABLES UNTUK CANVAS SEMAKAN ---
@@ -233,3 +233,31 @@
             if(!wk || !f) return alert("Pilih MINGGU dan FAIL RPH.");
             
             showLoading(true, "MUAT NAIK FAIL...");
+            
+            const reader = new FileReader();
+            reader.onload = async function() {
+                const base64 = reader.result.split(',')[1];
+                const payload = { 
+                    week: wk, 
+                    group: user.group, 
+                    fileName: f.name, 
+                    mimeType: f.type, 
+                    data: base64 
+                };
+                const res = await runAPI('upload', payload);
+                showLoading(false);
+                alert(res);
+            };
+            reader.readAsDataURL(f);
+        }
+
+        function accessMaster() {
+            const p = prompt("Masukkan Kod Master:");
+            if(p === "551MASTER") {
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('masterPanel').classList.add('active-tab');
+            } else { alert("Kod salah!"); }
+        }
+    </script>
+</body>
+</html>
