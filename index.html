@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eRPH Cloud 456</title>
+    <title>eRPH Cloud 551</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
@@ -11,7 +11,6 @@
         .tab-content { display: none; }
         .active-tab { display: block; }
         .card-week.selected { border-color: #4f46e5; background-color: #eef2ff; color: #4f46e5; }
-        /* Canvas Styling */
         #reviewModal { z-index: 1000; }
         canvas { cursor: crosshair; touch-action: none; background: transparent; }
     </style>
@@ -49,7 +48,7 @@
                 <input type="color" id="penColor" value="#ff0000" class="w-8 h-8 rounded cursor-pointer border-0 p-0">
                 <button onclick="clearCanvas()" class="text-yellow-400 text-xs font-bold px-2 flex flex-col items-center"><span class="material-icons text-sm">delete</span>Padam</button>
             </div>
-            <button onclick="saveSemakan()" class="bg-green-600 text-white px-6 py-3 rounded-xl text-sm font-black shadow-lg flex-1 hover:bg-green-500">SIMPAN & HANTAR SEMAKAN</button>
+            <button onclick="saveSemakan()" class="bg-green-600 text-white px-6 py-3 rounded-xl text-sm font-black shadow-lg flex-1 hover:bg-green-500">SIMPAN SEMAKAN</button>
         </div>
     </div>
 
@@ -57,7 +56,7 @@
         <div class="container mx-auto flex justify-between items-center max-w-2xl">
             <div class="flex items-center space-x-2">
                 <span class="material-icons">cloud_done</span>
-                <span class="font-bold uppercase tracking-widest text-lg">eRPH Cloud 551</span>
+                <span class="font-bold uppercase tracking-widest text-lg">eRPH Cloud</span>
             </div>
             <button id="logoutBtn" onclick="location.reload()" class="hidden bg-red-500 px-4 py-2 rounded-full text-xs font-bold shadow-lg">Log Keluar</button>
         </div>
@@ -99,7 +98,6 @@
                 <h2 id="adminGroupName" class="text-xl font-black text-gray-800">Nama Sekolah</h2>
                 <button onclick="doAction('createWeek')" class="bg-indigo-600 text-white p-2 rounded-xl flex items-center"><span class="material-icons text-sm mr-1">add</span> Minggu</button>
             </div>
-            
             <label class="text-xs font-bold text-gray-400 uppercase">Senarai Folder Minggu</label>
             <div id="adminWeekList" class="grid grid-cols-2 gap-2 bg-indigo-50 p-4 rounded-2xl mb-6"></div>
 
@@ -123,11 +121,10 @@
     </div>
 
     <script>
-        // MASUKKAN URL WEB APP ANDA DI SINI
-        const API_URL = "https://script.google.com/macros/s/AKfycbzho3l0aJiqiZGtSmfd5DiF3-9gOf1eVoiCS9I8GfN-Rk3U--EpIKSBpFROXPxgYkmEBQ/exec";
-        let user = { email: "", group: "", name: "" };
+        // PASTIKAN URL INI ADALAH URL YANG BETUL
+        const API_URL = "https://script.google.com/macros/s/AKfycbxtm2hdDCHjU_RyMUCj1rLo2vXeoGimAQMRV7MCTEzZDZcLleWaMtPeJVmC2gUzLQc0nQ/exec";
         
-        // --- VARIABLES UNTUK CANVAS SEMAKAN ---
+        let user = { email: "", group: "", name: "" };
         let canvas, ctx, isDrawing = false;
         let currentFileId = null;
 
@@ -145,118 +142,259 @@
 
         async function runAPI(actionName, payloadData) {
             try {
+                console.log("Menghantar: ", actionName);
                 const res = await fetch(API_URL, {
                     method: 'POST',
                     body: JSON.stringify({ action: actionName, data: payloadData }),
-                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    redirect: 'follow'
                 });
-                return await res.json();
-            } catch (err) { alert("Ralat Rangkaian. Sila semak internet/URL."); throw err; }
+                const data = await res.json();
+                console.log("Diterima: ", data);
+                return data;
+            } catch (err) { 
+                console.error("Ralat Rangkaian: ", err);
+                alert("Ralat Sistem: Sila semak sambungan internet anda."); 
+                return null;
+            }
         }
 
         async function doAction(action) {
-            if (action === 'login') {
-                const e = document.getElementById('loginEmail').value, p = document.getElementById('loginPass').value;
-                if(!e || !p) return alert("Isi emel dan kata laluan!");
-                showLoading(true, "MENGESAHKAN AKAUN...");
-                const res = await runAPI('login', { email: e, password: p });
-                showLoading(false);
-                if (res.error) return alert("Ralat Server: " + res.error);
-                if (!res.found) return alert("GAGAL: " + res.message);
-                
-                user = res;
-                document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('logoutBtn').classList.remove('hidden');
-                
-                if(res.role === "ADMIN_KUMPULAN") {
-                    document.getElementById('adminPanel').classList.add('active-tab');
-                    document.getElementById('adminGroupName').innerText = res.group;
-                    doAction('getWeeksAdmin');
-                } else {
-                    document.getElementById('guruPanel').classList.add('active-tab');
-                    document.getElementById('welcomeGuru').innerText = res.name;
-                    document.getElementById('guruGroup').innerText = res.group;
-                    doAction('getWeeksGuru');
+            try {
+                if (action === 'login') {
+                    const e = document.getElementById('loginEmail').value;
+                    const p = document.getElementById('loginPass').value;
+                    if(!e || !p) return alert("Sila isi emel dan kata laluan!");
+                    
+                    showLoading(true, "MENGESAHKAN AKAUN...");
+                    const res = await runAPI('login', { email: e, password: p });
+                    showLoading(false);
+                    
+                    if(!res) return;
+                    if (res.error) return alert("Ralat Server: " + res.error);
+                    if (!res.found) return alert("GAGAL: " + res.message);
+                    
+                    user = res;
+                    document.getElementById('loginSection').style.display = 'none';
+                    document.getElementById('logoutBtn').classList.remove('hidden');
+                    
+                    if(res.role === "ADMIN_KUMPULAN") {
+                        document.getElementById('adminPanel').classList.add('active-tab');
+                        document.getElementById('adminGroupName').innerText = res.group;
+                        doAction('getWeeksAdmin');
+                    } else {
+                        document.getElementById('guruPanel').classList.add('active-tab');
+                        document.getElementById('welcomeGuru').innerText = res.name;
+                        document.getElementById('guruGroup').innerText = res.group;
+                        doAction('getWeeksGuru');
+                    }
+                } 
+                else if (action === 'signup') {
+                    const d = { name: document.getElementById('regName').value, email: document.getElementById('regEmail').value, pass: document.getElementById('regPass').value };
+                    if(!d.name || !d.email || !d.pass) return alert("Lengkapkan maklumat.");
+                    showLoading(true, "MENDAFTAR...");
+                    const res = await runAPI('signup', d);
+                    showLoading(false); 
+                    if(res) { alert(res); toggleAuth('login'); }
                 }
-            } 
-            else if (action === 'signup') {
-                const d = { name: document.getElementById('regName').value, email: document.getElementById('regEmail').value, pass: document.getElementById('regPass').value };
-                if(!d.name || !d.email || !d.pass) return alert("Lengkapkan maklumat.");
-                showLoading(true, "MENDAFTAR...");
-                const res = await runAPI('signup', d);
-                showLoading(false); alert(res); toggleAuth('login');
-            }
-            else if (action === 'getWeeksGuru') {
-                const weeks = await runAPI('getWeeks', { group: user.group });
-                const cont = document.getElementById('weekList');
-                cont.innerHTML = weeks.length ? "" : "<p class='text-xs text-red-500 col-span-2'>Tiada folder.</p>";
-                weeks.forEach(w => {
-                    const btn = document.createElement('div');
-                    btn.className = "p-3 border-2 rounded-xl text-center text-sm font-bold cursor-pointer bg-white text-gray-700 card-week";
-                    btn.innerText = w;
-                    btn.onclick = () => { document.getElementById('selectedWeek').value = w; Array.from(cont.children).forEach(c => c.classList.remove('selected')); btn.classList.add('selected'); };
-                    cont.appendChild(btn);
-                });
-            }
-            else if (action === 'getWeeksAdmin') {
-                const weeks = await runAPI('getWeeks', { group: user.group });
-                const cont = document.getElementById('adminWeekList');
-                cont.innerHTML = weeks.length ? "" : "<p class='text-xs text-gray-500 col-span-2'>Sila cipta minggu.</p>";
-                weeks.forEach(w => {
-                    const btn = document.createElement('div');
-                    btn.className = "p-3 border rounded-xl font-bold text-indigo-900 bg-white shadow-sm text-sm text-center cursor-pointer hover:bg-indigo-100";
-                    btn.innerText = w;
-                    btn.onclick = () => { fetchSubmissions(w); }; // PANGGIL FAIL BILA KLIK MINGGU
-                    cont.appendChild(btn);
-                });
-            }
-            else if (action === 'createWeek') {
-                const n = prompt("Nama Minggu (Cth: MINGGU 1):");
-                if(!n) return;
-                showLoading(true, "MENCIPTA FOLDER...");
-                const res = await runAPI('createWeek', { weekName: n, group: user.group });
-                showLoading(false); alert(res.message);
-                if(res.status === 'success') doAction('getWeeksAdmin');
-            }
-            else if (action === 'saveGroup') {
-                const d = { groupName: document.getElementById('mGName').value, adminEmail: document.getElementById('mGAdmin').value, memberEmailsStr: document.getElementById('mGMembers').value };
-                if(!d.groupName || !d.adminEmail) return alert("Isi Nama dan Emel Admin.");
-                showLoading(true, "MENYIMPAN DATA...");
-                const res = await runAPI('saveGroup', d);
-                showLoading(false); alert(res); location.reload();
+                else if (action === 'getWeeksGuru') {
+                    const weeks = await runAPI('getWeeks', { group: user.group });
+                    if(!weeks) return;
+                    const cont = document.getElementById('weekList');
+                    cont.innerHTML = weeks.length ? "" : "<p class='text-xs text-red-500 col-span-2'>Tiada folder.</p>";
+                    weeks.forEach(w => {
+                        const btn = document.createElement('div');
+                        btn.className = "p-3 border-2 rounded-xl text-center text-sm font-bold cursor-pointer bg-white text-gray-700 card-week";
+                        btn.innerText = w;
+                        btn.onclick = () => { document.getElementById('selectedWeek').value = w; Array.from(cont.children).forEach(c => c.classList.remove('selected')); btn.classList.add('selected'); };
+                        cont.appendChild(btn);
+                    });
+                }
+                else if (action === 'getWeeksAdmin') {
+                    const weeks = await runAPI('getWeeks', { group: user.group });
+                    if(!weeks) return;
+                    const cont = document.getElementById('adminWeekList');
+                    cont.innerHTML = weeks.length ? "" : "<p class='text-xs text-gray-500 col-span-2'>Sila cipta minggu.</p>";
+                    weeks.forEach(w => {
+                        const btn = document.createElement('div');
+                        btn.className = "p-3 border rounded-xl font-bold text-indigo-900 bg-white shadow-sm text-sm text-center cursor-pointer hover:bg-indigo-100";
+                        btn.innerText = w;
+                        btn.onclick = () => { fetchSubmissions(w); }; 
+                        cont.appendChild(btn);
+                    });
+                }
+                else if (action === 'createWeek') {
+                    const n = prompt("Nama Minggu (Cth: MINGGU 1):");
+                    if(!n) return;
+                    showLoading(true, "MENCIPTA FOLDER...");
+                    const res = await runAPI('createWeek', { weekName: n, group: user.group });
+                    showLoading(false); 
+                    if(res) {
+                        alert(res.message);
+                        if(res.status === 'success') doAction('getWeeksAdmin');
+                    }
+                }
+                else if (action === 'saveGroup') {
+                    const d = { groupName: document.getElementById('mGName').value, adminEmail: document.getElementById('mGAdmin').value, memberEmailsStr: document.getElementById('mGMembers').value };
+                    if(!d.groupName || !d.adminEmail) return alert("Isi Nama dan Emel Admin.");
+                    showLoading(true, "MENYIMPAN DATA...");
+                    const res = await runAPI('saveGroup', d);
+                    showLoading(false); 
+                    if(res) { alert(res); location.reload(); }
+                }
+            } catch (error) {
+                console.error("Ralat dalam doAction: ", error);
+                showLoading(false);
             }
         }
 
         function uploadRPH() {
             const wk = document.getElementById('selectedWeek').value;
             const f = document.getElementById('fileInp').files[0];
-            if(!wk || !f) return alert("Pilih MINGGU dan FAIL RPH.");
+            if(!wk || !f) return alert("Sila pilih MINGGU dan FAIL RPH.");
             
             showLoading(true, "MUAT NAIK FAIL...");
-            
             const reader = new FileReader();
-            reader.onload = async function() {
-                const base64 = reader.result.split(',')[1];
-                const payload = { 
-                    week: wk, 
-                    group: user.group, 
-                    fileName: f.name, 
-                    mimeType: f.type, 
-                    data: base64 
-                };
+            reader.onload = async function(e) {
+                const payload = { data: e.target.result.split(',')[1], mimeType: f.type, fileName: f.name, week: wk, group: user.group };
                 const res = await runAPI('upload', payload);
                 showLoading(false);
-                alert(res);
+                if(res && res.includes("http")) { alert("Tahniah! RPH berjaya dihantar."); location.reload(); } 
+                else { alert("Gagal memuat naik."); }
             };
             reader.readAsDataURL(f);
         }
 
+        async function fetchSubmissions(weekName) {
+            document.getElementById('submissionArea').classList.remove('hidden');
+            document.getElementById('viewingWeek').innerText = weekName;
+            const cont = document.getElementById('fileListContainer');
+            cont.innerHTML = "<p class='text-xs text-center text-gray-500 animate-pulse'>Mencari fail RPH...</p>";
+            
+            const res = await runAPI('getSubmissions', { group: user.group, week: weekName });
+            if(!res) return cont.innerHTML = "<p class='text-red-500 text-xs'>Gagal memuat turun data.</p>";
+            if(res.status === "error") return cont.innerHTML = `<p class='text-red-500 text-xs'>${res.message}</p>`;
+            if(res.files.length === 0) return cont.innerHTML = `<p class='text-gray-400 text-xs italic text-center'>Belum ada RPH dihantar.</p>`;
+
+            cont.innerHTML = "";
+            res.files.forEach(f => {
+                let statusTag = f.isSemakan ? `<span class="bg-green-100 text-green-700 text-[9px] px-2 py-1 rounded font-bold ml-2">TELAH DISEMAK</span>` : "";
+                cont.innerHTML += `
+                <div class="bg-gray-50 border p-3 rounded-xl flex flex-col space-y-2 shadow-sm">
+                    <p class="text-sm font-bold text-gray-800 break-words">${f.name} ${statusTag}</p>
+                    <div class="flex space-x-2">
+                        <button onclick="window.open('${f.url}', '_blank')" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg text-xs font-bold hover:bg-gray-300">LIHAT</button>
+                        <button onclick="openReview('${f.url}', '${f.id}', '${f.name}')" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 flex justify-center items-center"><span class="material-icons text-sm mr-1">edit</span> CONTENG</button>
+                    </div>
+                </div>`;
+            });
+        }
+
+        function openReview(fileUrl, fileId, fileName) {
+            currentFileId = fileId;
+            document.getElementById('reviewFileName').innerText = fileName;
+            
+            const isImage = fileName.toLowerCase().match(/\.(jpeg|jpg|png|gif)$/i);
+            const img = document.getElementById('reviewImage');
+            
+            if(isImage) {
+                // HTTPS Google Drive Thumbnail API
+                img.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000"; 
+            } else {
+                alert("Fail ini adalah PDF. Sistem akan buka PDF di tab sebelah untuk rujukan. Sila conteng pada 'Kertas Kosong' di bawah sebagai Cop Pengesahan.");
+                window.open(fileUrl, '_blank');
+                img.src = "https://via.placeholder.com/600x800/ffffff/cccccc?text=Ruang+Catatan+Penyemak";
+            }
+
+            document.getElementById('reviewModal').classList.remove('hidden');
+            document.getElementById('reviewModal').classList.add('flex');
+            img.onload = setupCanvas;
+        }
+
+        function closeReview() {
+            document.getElementById('reviewModal').classList.add('hidden');
+            document.getElementById('reviewModal').classList.remove('flex');
+        }
+
+        function setupCanvas() {
+            canvas = document.getElementById('reviewCanvas');
+            ctx = canvas.getContext('2d');
+            const img = document.getElementById('reviewImage');
+            
+            canvas.width = img.width || 300;
+            canvas.height = img.height || 400;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            canvas.onmousedown = startDraw;
+            canvas.onmousemove = draw;
+            canvas.onmouseup = endDraw;
+            canvas.onmouseout = endDraw;
+            
+            canvas.ontouchstart = (e) => { e.preventDefault(); startDraw(e.touches[0]); };
+            canvas.ontouchmove = (e) => { e.preventDefault(); draw(e.touches[0]); };
+            canvas.ontouchend = endDraw;
+        }
+
+        function startDraw(e) { isDrawing = true; draw(e); }
+        function endDraw() { isDrawing = false; ctx.beginPath(); }
+        
+        function draw(e) {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = document.getElementById('penColor').value;
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+        async function saveSemakan() {
+            if(!currentFileId) return;
+            
+            const finalCanvas = document.createElement('canvas');
+            finalCanvas.width = canvas.width;
+            finalCanvas.height = canvas.height;
+            const fCtx = finalCanvas.getContext('2d');
+            
+            try {
+                fCtx.drawImage(document.getElementById('reviewImage'), 0, 0, finalCanvas.width, finalCanvas.height);
+                fCtx.drawImage(canvas, 0, 0);
+
+                const dataURL = finalCanvas.toDataURL('image/png');
+                const base64Data = dataURL.split(',')[1];
+                
+                showLoading(true, "MENYIMPAN SEMAKAN...");
+                const res = await runAPI('saveAnnotation', { fileId: currentFileId, image: base64Data });
+                showLoading(false);
+                
+                if(res && res.status === "success") {
+                    alert("Semakan RPH berjaya disimpan!");
+                    closeReview();
+                    fetchSubmissions(document.getElementById('viewingWeek').innerText);
+                } else {
+                    alert("Gagal: " + (res ? res.message : "Ralat tidak diketahui"));
+                }
+            } catch (err) {
+                showLoading(false);
+                alert("Ralat memproses imej. Jika fail PDF, sistem akan hantar contengan anda sebagai fail baharu.");
+                console.error("Canvas Error: ", err);
+            }
+        }
+
         function accessMaster() {
-            const p = prompt("Masukkan Kod Master:");
-            if(p === "551MASTER") {
+            if(prompt("Kod Master:") === "101010") {
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('masterPanel').classList.add('active-tab');
-            } else { alert("Kod salah!"); }
+            }
         }
     </script>
 </body>
