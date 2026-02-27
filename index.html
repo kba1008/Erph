@@ -35,14 +35,12 @@
             </div>
             <button onclick="closeReview()" class="bg-red-600 px-3 py-1 rounded font-bold text-xs hover:bg-red-700">TUTUP</button>
         </div>
-        
         <div class="flex-1 relative overflow-auto flex justify-center items-start bg-gray-800 p-2" id="canvasContainer">
             <div class="relative bg-white shadow-2xl" id="reviewWrapper" style="min-width: 300px; min-height: 400px;">
                 <img id="reviewImage" class="max-w-full h-auto block" alt="Sila tunggu imej dimuat turun..." crossorigin="anonymous" />
                 <canvas id="reviewCanvas" class="absolute top-0 left-0 w-full h-full"></canvas>
             </div>
         </div>
-        
         <div class="bg-gray-900 p-4 flex justify-between items-center gap-2">
             <div class="flex items-center space-x-2 bg-gray-800 p-2 rounded-lg">
                 <input type="color" id="penColor" value="#ff0000" class="w-8 h-8 rounded cursor-pointer border-0 p-0">
@@ -71,7 +69,7 @@
             <div id="divLogin">
                 <input type="email" id="loginEmail" placeholder="Emel Google (Gmail)" class="w-full border p-3 rounded-xl mb-4 bg-gray-50">
                 <input type="password" id="loginPass" placeholder="Kata Laluan" class="w-full border p-3 rounded-xl mb-6 bg-gray-50">
-                <button onclick="doAction('login')" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black">MASUK SISTEM</button>
+                <button onclick="doAction('login')" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black shadow-lg">MASUK SISTEM</button>
                 <button onclick="accessMaster()" class="w-full mt-6 text-[10px] text-gray-400 uppercase tracking-widest">Akses Master Admin</button>
             </div>
             <div id="divSignup" class="hidden space-y-4">
@@ -85,27 +83,41 @@
         <div id="guruPanel" class="tab-content bg-white p-6 rounded-3xl shadow-xl mt-6">
             <h2 class="text-2xl font-black text-gray-800 uppercase" id="welcomeGuru">Nama</h2>
             <p class="text-sm text-gray-500 mb-6">Kumpulan: <span id="guruGroup" class="font-bold text-indigo-600"></span></p>
-            <label class="text-xs font-bold text-gray-400 uppercase">Pilih Minggu</label>
-            <div id="weekList" class="grid grid-cols-2 gap-2 mb-6 p-2 bg-gray-50 rounded-2xl border"></div>
-            <label class="text-xs font-bold text-gray-400 uppercase">Pilih Fail (PDF/Imej)</label>
-            <input type="file" id="fileInp" class="w-full p-3 border-2 border-dashed border-indigo-200 rounded-2xl mb-6 bg-gray-50">
+            
+            <label class="text-xs font-bold text-gray-400 uppercase">1. Pilih Minggu</label>
+            <div id="weekList" class="grid grid-cols-2 gap-2 mb-6 mt-1 p-2 bg-gray-50 rounded-2xl border"></div>
+            
+            <label class="text-xs font-bold text-gray-400 uppercase">2. Muat Naik Fail RPH</label>
+            <input type="file" id="fileInp" class="w-full p-3 border-2 border-dashed border-indigo-200 rounded-2xl mb-4 bg-gray-50 mt-1">
             <input type="hidden" id="selectedWeek">
-            <button onclick="uploadRPH()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black">HANTAR RPH</button>
+            <button onclick="uploadRPH()" class="w-full bg-indigo-600 text-white py-3 rounded-2xl font-black shadow-lg">HANTAR RPH</button>
+
+            <div id="teacherFilesArea" class="mt-8 pt-6 border-t border-gray-100 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-sm font-bold text-gray-800 flex items-center"><span class="material-icons text-indigo-500 mr-1">history</span> Sejarah Hantaran:</h3>
+                    <span id="lblTeacherWeek" class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded">-</span>
+                </div>
+                <div id="teacherFileList" class="space-y-3">
+                    <p class="text-xs text-gray-400 italic">Sila pilih minggu di atas.</p>
+                </div>
+            </div>
         </div>
 
         <div id="adminPanel" class="tab-content bg-white p-6 rounded-3xl shadow-xl mt-6">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
-                <h2 id="adminGroupName" class="text-xl font-black text-gray-800">Nama Sekolah</h2>
-                <button onclick="doAction('createWeek')" class="bg-indigo-600 text-white p-2 rounded-xl flex items-center"><span class="material-icons text-sm mr-1">add</span> Minggu</button>
+                <h2 id="adminGroupName" class="text-xl font-black text-gray-800 uppercase">Nama Sekolah</h2>
+                <button onclick="doAction('createWeek')" class="bg-indigo-600 text-white p-2 rounded-xl flex items-center shadow-lg"><span class="material-icons text-sm mr-1">add</span> Minggu</button>
             </div>
+            
             <label class="text-xs font-bold text-gray-400 uppercase">Senarai Folder Minggu</label>
-            <div id="adminWeekList" class="grid grid-cols-2 gap-2 bg-indigo-50 p-4 rounded-2xl mb-6"></div>
+            <div id="adminWeekList" class="grid grid-cols-2 gap-2 bg-indigo-50 p-4 rounded-2xl mb-6 mt-1"></div>
 
-            <div id="submissionArea" class="hidden">
-                <h3 class="font-bold text-indigo-900 border-b pb-2 mb-4 flex justify-between">
-                    <span>Fail RPH: <span id="viewingWeek" class="text-indigo-500"></span></span>
+            <div id="submissionArea" class="hidden mt-6">
+                <h3 class="font-bold text-gray-800 border-b pb-2 mb-4 flex justify-between items-center">
+                    <span>Folder Guru</span>
+                    <span id="viewingWeek" class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded text-xs"></span>
                 </h3>
-                <div id="fileListContainer" class="space-y-3 max-h-96 overflow-y-auto"></div>
+                <div id="adminTeacherGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
             </div>
         </div>
 
@@ -121,8 +133,8 @@
     </div>
 
     <script>
-        // PASTIKAN URL INI ADALAH URL YANG BETUL
-        const API_URL = "https://script.google.com/macros/s/AKfycbxtm2hdDCHjU_RyMUCj1rLo2vXeoGimAQMRV7MCTEzZDZcLleWaMtPeJVmC2gUzLQc0nQ/exec";
+        // MASUKKAN URL APP SCRIPT ANDA DI SINI
+        const API_URL = "https://script.google.com/macros/s/AKfycbxtgwoi2rrM6pdT7pv5ULnnkNKaZ-n-CBIHEUBqMEZkjxMSrvYz6K5TG4WhiJl0WWUchQ/exec";
         
         let user = { email: "", group: "", name: "" };
         let canvas, ctx, isDrawing = false;
@@ -142,21 +154,14 @@
 
         async function runAPI(actionName, payloadData) {
             try {
-                console.log("Menghantar: ", actionName);
                 const res = await fetch(API_URL, {
                     method: 'POST',
                     body: JSON.stringify({ action: actionName, data: payloadData }),
                     headers: { "Content-Type": "text/plain;charset=utf-8" },
                     redirect: 'follow'
                 });
-                const data = await res.json();
-                console.log("Diterima: ", data);
-                return data;
-            } catch (err) { 
-                console.error("Ralat Rangkaian: ", err);
-                alert("Ralat Sistem: Sila semak sambungan internet anda."); 
-                return null;
-            }
+                return await res.json();
+            } catch (err) { alert("Ralat Rangkaian. Sila semak internet anda."); return null; }
         }
 
         async function doAction(action) {
@@ -194,8 +199,7 @@
                     if(!d.name || !d.email || !d.pass) return alert("Lengkapkan maklumat.");
                     showLoading(true, "MENDAFTAR...");
                     const res = await runAPI('signup', d);
-                    showLoading(false); 
-                    if(res) { alert(res); toggleAuth('login'); }
+                    showLoading(false); if(res) { alert(res); toggleAuth('login'); }
                 }
                 else if (action === 'getWeeksGuru') {
                     const weeks = await runAPI('getWeeks', { group: user.group });
@@ -206,7 +210,12 @@
                         const btn = document.createElement('div');
                         btn.className = "p-3 border-2 rounded-xl text-center text-sm font-bold cursor-pointer bg-white text-gray-700 card-week";
                         btn.innerText = w;
-                        btn.onclick = () => { document.getElementById('selectedWeek').value = w; Array.from(cont.children).forEach(c => c.classList.remove('selected')); btn.classList.add('selected'); };
+                        btn.onclick = () => { 
+                            document.getElementById('selectedWeek').value = w; 
+                            Array.from(cont.children).forEach(c => c.classList.remove('selected')); 
+                            btn.classList.add('selected'); 
+                            fetchTeacherFiles(w); // Tarik fail guru bila klik minggu
+                        };
                         cont.appendChild(btn);
                     });
                 }
@@ -217,9 +226,9 @@
                     cont.innerHTML = weeks.length ? "" : "<p class='text-xs text-gray-500 col-span-2'>Sila cipta minggu.</p>";
                     weeks.forEach(w => {
                         const btn = document.createElement('div');
-                        btn.className = "p-3 border rounded-xl font-bold text-indigo-900 bg-white shadow-sm text-sm text-center cursor-pointer hover:bg-indigo-100";
+                        btn.className = "p-3 border rounded-xl font-bold text-indigo-900 bg-white shadow-sm text-sm text-center cursor-pointer hover:bg-indigo-100 hover:shadow";
                         btn.innerText = w;
-                        btn.onclick = () => { fetchSubmissions(w); }; 
+                        btn.onclick = () => { fetchAdminDashboard(w); }; 
                         cont.appendChild(btn);
                     });
                 }
@@ -229,67 +238,132 @@
                     showLoading(true, "MENCIPTA FOLDER...");
                     const res = await runAPI('createWeek', { weekName: n, group: user.group });
                     showLoading(false); 
-                    if(res) {
-                        alert(res.message);
-                        if(res.status === 'success') doAction('getWeeksAdmin');
-                    }
+                    if(res) { alert(res.message); if(res.status === 'success') doAction('getWeeksAdmin'); }
                 }
-                else if (action === 'saveGroup') {
-                    const d = { groupName: document.getElementById('mGName').value, adminEmail: document.getElementById('mGAdmin').value, memberEmailsStr: document.getElementById('mGMembers').value };
-                    if(!d.groupName || !d.adminEmail) return alert("Isi Nama dan Emel Admin.");
-                    showLoading(true, "MENYIMPAN DATA...");
-                    const res = await runAPI('saveGroup', d);
-                    showLoading(false); 
-                    if(res) { alert(res); location.reload(); }
-                }
-            } catch (error) {
-                console.error("Ralat dalam doAction: ", error);
-                showLoading(false);
-            }
+            } catch (error) { showLoading(false); }
         }
+
+        // --- GURU: HANTAR DAN LIHAT RPH ---
 
         function uploadRPH() {
             const wk = document.getElementById('selectedWeek').value;
             const f = document.getElementById('fileInp').files[0];
-            if(!wk || !f) return alert("Sila pilih MINGGU dan FAIL RPH.");
+            if(!wk || !f) return alert("Sila pilih MINGGU dan FAIL RPH terlebih dahulu.");
             
             showLoading(true, "MUAT NAIK FAIL...");
             const reader = new FileReader();
             reader.onload = async function(e) {
-                const payload = { data: e.target.result.split(',')[1], mimeType: f.type, fileName: f.name, week: wk, group: user.group };
+                // Hantar nama cikgu sekali untuk Auto Rename file
+                const payload = { data: e.target.result.split(',')[1], mimeType: f.type, fileName: f.name, week: wk, group: user.group, userName: user.name };
                 const res = await runAPI('upload', payload);
                 showLoading(false);
-                if(res && res.includes("http")) { alert("Tahniah! RPH berjaya dihantar."); location.reload(); } 
-                else { alert("Gagal memuat naik."); }
+                if(res && res.includes("http")) { 
+                    alert("RPH berjaya dihantar!"); 
+                    document.getElementById('fileInp').value = ""; // Clear file
+                    fetchTeacherFiles(wk); // Refresh list
+                } else { alert("Gagal memuat naik."); }
             };
             reader.readAsDataURL(f);
         }
 
-        async function fetchSubmissions(weekName) {
-            document.getElementById('submissionArea').classList.remove('hidden');
-            document.getElementById('viewingWeek').innerText = weekName;
-            const cont = document.getElementById('fileListContainer');
-            cont.innerHTML = "<p class='text-xs text-center text-gray-500 animate-pulse'>Mencari fail RPH...</p>";
-            
-            const res = await runAPI('getSubmissions', { group: user.group, week: weekName });
-            if(!res) return cont.innerHTML = "<p class='text-red-500 text-xs'>Gagal memuat turun data.</p>";
-            if(res.status === "error") return cont.innerHTML = `<p class='text-red-500 text-xs'>${res.message}</p>`;
-            if(res.files.length === 0) return cont.innerHTML = `<p class='text-gray-400 text-xs italic text-center'>Belum ada RPH dihantar.</p>`;
+        async function fetchTeacherFiles(weekName) {
+            document.getElementById('teacherFilesArea').classList.remove('hidden');
+            document.getElementById('lblTeacherWeek').innerText = weekName;
+            const cont = document.getElementById('teacherFileList');
+            cont.innerHTML = "<p class='text-xs text-gray-400 italic animate-pulse'>Menyemak fail anda...</p>";
+
+            const res = await runAPI('getTeacherFiles', { group: user.group, week: weekName, userName: user.name });
+
+            if(!res || res.status === "error") return cont.innerHTML = `<p class='text-xs text-red-500'>Tiada folder.</p>`;
+            if(res.files.length === 0) return cont.innerHTML = `<p class='text-xs text-gray-500 italic'>Belum ada RPH dihantar untuk minggu ini.</p>`;
 
             cont.innerHTML = "";
             res.files.forEach(f => {
-                let statusTag = f.isSemakan ? `<span class="bg-green-100 text-green-700 text-[9px] px-2 py-1 rounded font-bold ml-2">TELAH DISEMAK</span>` : "";
+                let isSemakan = f.name.includes("[SEMAKAN]");
+                let style = isSemakan ? "bg-green-50 border-green-200" : "bg-white border-gray-200";
+                let badge = isSemakan ? `<span class="bg-green-500 text-white text-[9px] px-2 py-0.5 rounded ml-2">TELAH DISEMAK</span>` : `<span class="bg-yellow-400 text-yellow-900 text-[9px] px-2 py-0.5 rounded ml-2 shadow-sm">MENUNGGU SEMAKAN</span>`;
+                
+                // Buang bracket nama dari fail supaya nampak kemas
+                let cleanName = f.name.replace(`[${user.name}] `, '');
+
                 cont.innerHTML += `
-                <div class="bg-gray-50 border p-3 rounded-xl flex flex-col space-y-2 shadow-sm">
-                    <p class="text-sm font-bold text-gray-800 break-words">${f.name} ${statusTag}</p>
-                    <div class="flex space-x-2">
-                        <button onclick="window.open('${f.url}', '_blank')" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg text-xs font-bold hover:bg-gray-300">LIHAT</button>
-                        <button onclick="openReview('${f.url}', '${f.id}', '${f.name}')" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 flex justify-center items-center"><span class="material-icons text-sm mr-1">edit</span> CONTENG</button>
+                <div class="flex justify-between items-center p-3 rounded-xl border ${style} shadow-sm">
+                    <div class="flex-1 overflow-hidden">
+                        <p class="text-xs font-bold text-gray-700 truncate">${cleanName}</p>
+                        <div class="mt-1">${badge}</div>
                     </div>
+                    <button onclick="window.open('${f.url}', '_blank')" class="ml-2 bg-indigo-100 text-indigo-700 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-indigo-200"><span class="material-icons text-sm">visibility</span></button>
                 </div>`;
             });
         }
 
+        // --- ADMIN: PAPARAN FOLDER DASHBOARD ---
+
+        async function fetchAdminDashboard(weekName) {
+            document.getElementById('submissionArea').classList.remove('hidden');
+            document.getElementById('viewingWeek').innerText = weekName;
+            const cont = document.getElementById('adminTeacherGrid');
+            cont.innerHTML = "<p class='text-xs text-center text-gray-500 animate-pulse col-span-2'>Menyusun fail guru...</p>";
+
+            const res = await runAPI('getAdminSubmissionsData', { group: user.group, week: weekName });
+            
+            if(!res || res.status === "error") return cont.innerHTML = `<p class='text-red-500 text-xs col-span-2'>${res?res.message:'Ralat sistem'}</p>`;
+            
+            cont.innerHTML = "";
+            if(res.data.length === 0) return cont.innerHTML = "<p class='text-xs text-gray-500 col-span-2'>Tiada cikgu berdaftar dalam kumpulan ini.</p>";
+
+            res.data.forEach(teacher => {
+                // Konfigurasi Warna Kad: KUNING = Ada Fail Baru, BIRU = Bersih/Selesai
+                let isYellow = teacher.statusColor === "YELLOW";
+                let bgColor = isYellow ? "bg-yellow-50 border-yellow-300" : "bg-blue-50 border-blue-200";
+                let titleColor = isYellow ? "text-yellow-800" : "text-blue-900";
+                let iconColor = isYellow ? "text-yellow-500" : "text-blue-400";
+                let statusBadge = isYellow ? `<span class="bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded text-[9px] font-bold shadow-sm animate-bounce">ADA RPH BARU</span>` : (teacher.files.length > 0 ? `<span class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded text-[9px] font-bold">SELESAI</span>` : `<span class="text-gray-400 text-[10px] italic">Tiada Hantaran</span>`);
+
+                let cardHtml = `
+                <div class="${bgColor} border p-4 rounded-2xl flex flex-col shadow-sm">
+                    <div class="flex items-center justify-between mb-3 border-b border-black border-opacity-5 pb-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="material-icons ${iconColor} text-3xl">folder</span>
+                            <h4 class="font-bold text-sm ${titleColor}">${teacher.teacherName}</h4>
+                        </div>
+                        <div>${statusBadge}</div>
+                    </div>
+                    <div class="space-y-2 flex-1">
+                `;
+
+                if(teacher.files.length === 0) {
+                    cardHtml += `<div class="py-2 text-center text-gray-400"><span class="material-icons text-xl opacity-50">description</span></div>`;
+                } else {
+                    teacher.files.forEach(f => {
+                        let isSemakan = f.name.includes("[SEMAKAN]");
+                        let cleanName = f.name.replace(`[${teacher.teacherName}] `, '');
+                        
+                        if(isSemakan) {
+                            cardHtml += `
+                            <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-green-200 shadow-sm">
+                                <span class="text-[10px] text-green-700 font-bold truncate pr-2">✔️ ${cleanName}</span>
+                                <button onclick="window.open('${f.url}')" class="text-[9px] bg-green-100 text-green-700 px-2 py-1 rounded font-bold hover:bg-green-200">LIHAT</button>
+                            </div>`;
+                        } else {
+                            cardHtml += `
+                            <div class="flex flex-col space-y-2 bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
+                                <span class="text-xs text-gray-700 font-medium truncate">📄 ${cleanName}</span>
+                                <div class="flex space-x-1">
+                                    <button onclick="window.open('${f.url}')" class="flex-1 text-[10px] bg-gray-100 text-gray-600 py-1.5 rounded font-bold hover:bg-gray-200">Buka</button>
+                                    <button onclick="openReview('${f.url}', '${f.id}', '${f.name}')" class="flex-1 text-[10px] bg-indigo-600 text-white py-1.5 rounded font-bold hover:bg-indigo-700 flex justify-center items-center"><span class="material-icons text-[11px] mr-1">edit</span>CONTENG</button>
+                                </div>
+                            </div>`;
+                        }
+                    });
+                }
+
+                cardHtml += `</div></div>`;
+                cont.innerHTML += cardHtml;
+            });
+        }
+
+        // --- FUNGSI CANVAS (CONTENG) ---
         function openReview(fileUrl, fileId, fileName) {
             currentFileId = fileId;
             document.getElementById('reviewFileName').innerText = fileName;
@@ -297,11 +371,9 @@
             const isImage = fileName.toLowerCase().match(/\.(jpeg|jpg|png|gif)$/i);
             const img = document.getElementById('reviewImage');
             
-            if(isImage) {
-                // HTTPS Google Drive Thumbnail API
-                img.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000"; 
-            } else {
-                alert("Fail ini adalah PDF. Sistem akan buka PDF di tab sebelah untuk rujukan. Sila conteng pada 'Kertas Kosong' di bawah sebagai Cop Pengesahan.");
+            if(isImage) { img.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000"; } 
+            else {
+                alert("Fail ini adalah PDF. Sila lihat di tab sebelah dan gunakan 'Kertas Kosong' di bawah untuk Cop Pengesahan.");
                 window.open(fileUrl, '_blank');
                 img.src = "https://via.placeholder.com/600x800/ffffff/cccccc?text=Ruang+Catatan+Penyemak";
             }
@@ -325,11 +397,8 @@
             canvas.height = img.height || 400;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            canvas.onmousedown = startDraw;
-            canvas.onmousemove = draw;
-            canvas.onmouseup = endDraw;
-            canvas.onmouseout = endDraw;
-            
+            canvas.onmousedown = startDraw; canvas.onmousemove = draw;
+            canvas.onmouseup = endDraw; canvas.onmouseout = endDraw;
             canvas.ontouchstart = (e) => { e.preventDefault(); startDraw(e.touches[0]); };
             canvas.ontouchmove = (e) => { e.preventDefault(); draw(e.touches[0]); };
             canvas.ontouchend = endDraw;
@@ -346,23 +415,18 @@
             const x = (e.clientX - rect.left) * scaleX;
             const y = (e.clientY - rect.top) * scaleY;
 
-            ctx.lineWidth = 4;
-            ctx.lineCap = 'round';
+            ctx.lineWidth = 4; ctx.lineCap = 'round';
             ctx.strokeStyle = document.getElementById('penColor').value;
-            ctx.lineTo(x, y);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x, y);
+            ctx.lineTo(x, y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x, y);
         }
 
         function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
         async function saveSemakan() {
             if(!currentFileId) return;
-            
             const finalCanvas = document.createElement('canvas');
-            finalCanvas.width = canvas.width;
-            finalCanvas.height = canvas.height;
+            finalCanvas.width = canvas.width; finalCanvas.height = canvas.height;
             const fCtx = finalCanvas.getContext('2d');
             
             try {
@@ -377,25 +441,14 @@
                 showLoading(false);
                 
                 if(res && res.status === "success") {
-                    alert("Semakan RPH berjaya disimpan!");
+                    alert("Semakan berjaya disimpan!");
                     closeReview();
-                    fetchSubmissions(document.getElementById('viewingWeek').innerText);
-                } else {
-                    alert("Gagal: " + (res ? res.message : "Ralat tidak diketahui"));
-                }
-            } catch (err) {
-                showLoading(false);
-                alert("Ralat memproses imej. Jika fail PDF, sistem akan hantar contengan anda sebagai fail baharu.");
-                console.error("Canvas Error: ", err);
-            }
+                    fetchAdminDashboard(document.getElementById('viewingWeek').innerText); // Refresh panel admin
+                } else alert("Gagal disimpan.");
+            } catch (err) { showLoading(false); alert("Ralat menyimpan fail."); }
         }
 
-        function accessMaster() {
-            if(prompt("Kod Master:") === "101010") {
-                document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('masterPanel').classList.add('active-tab');
-            }
-        }
+        function accessMaster() { if(prompt("Kod Master:") === "101010") { document.getElementById('loginSection').style.display = 'none'; document.getElementById('masterPanel').classList.add('active-tab'); } }
     </script>
 </body>
 </html>
