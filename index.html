@@ -30,7 +30,10 @@
                 <span class="material-icons">cloud_done</span>
                 <span class="font-bold uppercase tracking-widest text-lg">eRPH Cloud</span>
             </div>
-            <button id="logoutBtn" onclick="location.reload()" class="hidden bg-red-500 px-4 py-2 rounded-full text-xs font-bold shadow-lg">Log Keluar</button>
+            <div class="flex space-x-2">
+                <button id="changePassBtn" onclick="changeOwnPassword()" class="hidden bg-yellow-500 px-3 py-2 rounded-full text-xs font-bold text-black shadow-lg hover:bg-yellow-400">Tukar Pass</button>
+                <button id="logoutBtn" onclick="location.reload()" class="hidden bg-red-500 px-4 py-2 rounded-full text-xs font-bold shadow-lg">Log Keluar</button>
+            </div>
         </div>
     </nav>
 
@@ -41,14 +44,14 @@
                 <button onclick="toggleAuth('signup')" id="btnTabSignup" class="font-bold text-gray-400 pb-2">DAFTAR</button>
             </div>
             <div id="divLogin">
-                <input type="email" id="loginEmail" placeholder="Emel Google (Gmail)" class="w-full border p-3 rounded-xl mb-4 bg-gray-50">
+                <input type="text" id="loginIC" placeholder="No. Kad Pengenalan" class="w-full border p-3 rounded-xl mb-4 bg-gray-50">
                 <input type="password" id="loginPass" placeholder="Kata Laluan" class="w-full border p-3 rounded-xl mb-6 bg-gray-50">
                 <button onclick="doAction('login')" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black shadow-lg">MASUK SISTEM</button>
                 <button onclick="accessMaster()" class="w-full mt-6 text-[10px] text-gray-400 uppercase tracking-widest font-bold">Akses Master Admin</button>
             </div>
             <div id="divSignup" class="hidden space-y-4">
                 <input type="text" id="regName" placeholder="Nama Penuh" class="w-full border p-3 rounded-xl bg-gray-50">
-                <input type="email" id="regEmail" placeholder="Emel Gmail" class="w-full border p-3 rounded-xl bg-gray-50">
+                <input type="text" id="regIC" placeholder="No. Kad Pengenalan (Tanpa -)" class="w-full border p-3 rounded-xl bg-gray-50">
                 <input type="password" id="regPass" placeholder="Cipta Kata Laluan" class="w-full border p-3 rounded-xl bg-gray-50">
                 <button onclick="doAction('signup')" class="w-full bg-gray-800 text-white py-4 rounded-2xl font-bold">HANTAR PENDAFTARAN</button>
             </div>
@@ -112,6 +115,14 @@
         <div id="masterPanel" class="tab-content bg-gray-900 p-8 rounded-3xl text-white mt-6 shadow-2xl">
             <h2 class="text-2xl font-black text-red-500 mb-6 flex items-center"><span class="material-icons mr-2">admin_panel_settings</span> KAWALAN PUSAT</h2>
             
+            <!-- SENARAI USER -->
+            <div class="mb-10 bg-gray-800 p-4 rounded-xl border border-gray-600">
+                <h3 class="text-sm font-bold text-blue-400 mb-3 border-b border-gray-700 pb-2">SENARAI SEMUA PENGGUNA (IC)</h3>
+                <div id="masterUserList" class="space-y-2 h-64 overflow-auto">
+                    <p class="text-xs text-gray-500 animate-pulse">Memuatkan data pengguna...</p>
+                </div>
+            </div>
+
             <div class="mb-10">
                 <h3 class="text-sm font-bold text-gray-400 mb-3 border-b border-gray-700 pb-2">SENARAI KUMPULAN BERDAFTAR</h3>
                 <div id="masterGroupList" class="space-y-3">
@@ -137,13 +148,13 @@
                     </div>
                     
                     <div>
-                        <label class="text-[10px] text-gray-400 font-bold uppercase ml-1">Emel Admin Kumpulan</label>
-                        <input type="text" id="mGAdmin" placeholder="Emel Guru Besar/Pengetua" class="w-full p-4 rounded-xl mt-1 bg-gray-100 focus:bg-white transition-all">
+                        <label class="text-[10px] text-gray-400 font-bold uppercase ml-1">IC Admin Kumpulan</label>
+                        <input type="text" id="mGAdmin" placeholder="No. IC Guru Besar/Pengetua" class="w-full p-4 rounded-xl mt-1 bg-gray-100 focus:bg-white transition-all">
                     </div>
                     
                     <div>
-                        <label class="text-[10px] text-gray-400 font-bold uppercase ml-1">Senarai Emel Ahli (Guru)</label>
-                        <textarea id="mGMembers" placeholder="pisahkan, dengan, koma" class="w-full p-4 rounded-xl h-24 mt-1 bg-gray-100 focus:bg-white transition-all leading-relaxed"></textarea>
+                        <label class="text-[10px] text-gray-400 font-bold uppercase ml-1">Senarai IC Ahli (Guru)</label>
+                        <textarea id="mGMembers" placeholder="pisahkan, dengan, koma (Cth: 800101015555, 900202026666)" class="w-full p-4 rounded-xl h-24 mt-1 bg-gray-100 focus:bg-white transition-all leading-relaxed"></textarea>
                     </div>
 
                     <div class="flex space-x-2 pt-2">
@@ -156,7 +167,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbxZ7wscyFAaF8uT0sBN6r3wQwikbYYizK0Q3D9epIkEpoJxNfNFimJIVAvrHWHFsoD81g/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycby0VrVsm-xobLnfvXTdhjJVHm0W62WEViS7uJrFCrNNzqv1QhoFTDRrukc9Ffd97C1Orw/exec";
         
         let user = { email: "", group: "", name: "" };
 
@@ -187,12 +198,12 @@
         async function doAction(action) {
             try {
                 if (action === 'login') {
-                    const e = document.getElementById('loginEmail').value;
+                    const ic = document.getElementById('loginIC').value;
                     const p = document.getElementById('loginPass').value;
-                    if(!e || !p) return alert("Sila isi emel dan kata laluan!");
+                    if(!ic || !p) return alert("Sila isi IC dan kata laluan!");
                     
                     showLoading(true, "MENGESAHKAN AKAUN...");
-                    const res = await runAPI('login', { email: e, password: p });
+                    const res = await runAPI('login', { ic: ic, password: p });
                     showLoading(false);
                     
                     if(!res) return;
@@ -202,6 +213,7 @@
                     user = res;
                     document.getElementById('loginSection').style.display = 'none';
                     document.getElementById('logoutBtn').classList.remove('hidden');
+                    document.getElementById('changePassBtn').classList.remove('hidden');
                     
                     if(res.role === "ADMIN_KUMPULAN") {
                         document.getElementById('adminPanel').classList.add('active-tab');
@@ -215,8 +227,8 @@
                     }
                 } 
                 else if (action === 'signup') {
-                    const d = { name: document.getElementById('regName').value, email: document.getElementById('regEmail').value, pass: document.getElementById('regPass').value };
-                    if(!d.name || !d.email || !d.pass) return alert("Lengkapkan maklumat.");
+                    const d = { name: document.getElementById('regName').value, ic: document.getElementById('regIC').value, pass: document.getElementById('regPass').value };
+                    if(!d.name || !d.ic || !d.pass) return alert("Lengkapkan maklumat.");
                     showLoading(true, "MENDAFTAR...");
                     const res = await runAPI('signup', d);
                     showLoading(false); if(res) { alert(res); toggleAuth('login'); }
@@ -377,7 +389,7 @@
                             </div>
                             <div class="flex justify-between items-center bg-gray-50 p-1 rounded">
                                 <div class="flex">${stars}</div>
-                                <button onclick="commentFile('${f.id}', '${f.comment||''}')" class="text-gray-400 hover:text-blue-600">
+                                <button onclick="commentFile('${f.id}', '${f.comment||''}', '${teacher.teacherName}', '${cleanName}')" class="text-gray-400 hover:text-blue-600">
                                     <span class="material-icons text-sm">${f.comment ? 'sms' : 'add_comment'}</span>
                                 </button>
                             </div>
@@ -398,12 +410,12 @@
             if(res && res.status === "success") { fetchAdminDashboard(wk); }
         }
 
-        async function commentFile(fid, oldComment) {
+        async function commentFile(fid, oldComment, tName, fName) {
             const c = prompt("Ulasan Admin:", oldComment);
             if(c === null) return;
             showLoading(true, "MENYIMPAN ULASAN...");
             const wk = document.getElementById('viewingWeek').innerText;
-            const res = await runAPI('saveComment', { fileId: fid, comment: c, group: user.group, week: wk });
+            const res = await runAPI('saveComment', { fileId: fid, comment: c, group: user.group, week: wk, teacherName: tName, fileName: fName });
             showLoading(false);
             if(res && res.status === "success") { fetchAdminDashboard(wk); }
         }
@@ -415,7 +427,18 @@
                 document.getElementById('logoutBtn').classList.remove('hidden');
                 fetchMasterGroups();
                 fetchGlobalStats();
+                fetchMasterUsers();
             } 
+        }
+
+        async function changeOwnPassword() {
+            const newP = prompt("Masukkan Kata Laluan Baharu:");
+            if(!newP) return;
+            showLoading(true, "MENUKAR KATA LALUAN...");
+            const res = await runAPI('changePassword', { ic: user.email, newPass: newP });
+            showLoading(false);
+            if(res && res.status === 'success') { alert("Kata laluan berjaya ditukar! Sila log masuk semula."); location.reload(); }
+            else { alert("Gagal menukar kata laluan."); }
         }
 
         async function fetchMasterGroups() {
@@ -442,6 +465,33 @@
                     </div>
                 </div>`;
             });
+        }
+
+        async function fetchMasterUsers() {
+            const cont = document.getElementById('masterUserList');
+            const res = await runAPI('getAllUsers', {});
+            if(res && res.status === 'success') {
+                cont.innerHTML = "";
+                res.data.forEach(u => {
+                    cont.innerHTML += `
+                    <div class="flex justify-between items-center text-xs bg-gray-700 p-2 rounded mb-1">
+                        <div class="truncate mr-2">
+                            <p class="font-bold text-white">${u.name}</p>
+                            <p class="text-gray-400">IC: ${u.ic} | Pass: <span class="text-yellow-300">${u.password}</span></p>
+                            <p class="text-[9px] text-gray-500">Group: ${u.group}</p>
+                        </div>
+                        <button onclick="resetUserPassword('${u.ic}')" class="bg-red-600 text-white px-2 py-1 rounded text-[9px] hover:bg-red-500">RESET</button>
+                    </div>`;
+                });
+            }
+        }
+
+        async function resetUserPassword(ic) {
+            if(!confirm("Reset kata laluan pengguna ini kepada 'skselama1008'?")) return;
+            showLoading(true, "RESET PASSWORD...");
+            const res = await runAPI('resetUserPassword', { ic: ic });
+            showLoading(false);
+            if(res && res.status === 'success') { alert(res.message); fetchMasterUsers(); }
         }
         
         async function fetchGlobalStats() {
@@ -497,12 +547,12 @@
             const admin = document.getElementById('mGAdmin').value.trim();
             const members = document.getElementById('mGMembers').value.trim();
 
-            if (!name || !admin) return alert("Sila isi sekurang-kurangnya Nama Kumpulan dan Emel Admin.");
+            if (!name || !admin) return alert("Sila isi sekurang-kurangnya Nama Kumpulan dan IC Admin.");
 
             if (mode === "new") {
                 showLoading(true, "MENDAFTAR KUMPULAN...");
                 const res = await runAPI('saveGroup', { groupName: name, adminEmail: admin, memberEmailsStr: members });
-                showLoading(false); if (res) { alert(res); resetMasterForm(); fetchMasterGroups(); }
+                showLoading(false); if (res) { alert(res); resetMasterForm(); fetchMasterGroups(); } 
             } else if (mode === "edit") {
                 showLoading(true, "MENGEMASKINI DATA...");
                 const res = await runAPI('updateGroup', { groupName: name, adminEmail: admin, memberEmailsStr: members });
