@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eRPH Cloud 111</title>
+    <title>eRPH Cloud 555</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
@@ -49,7 +49,7 @@
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <span class="material-icons">cloud_done</span>
-                <span class="font-black text-lg tracking-tighter uppercase">eRPH Cloud 111</span>
+                <span class="font-black text-lg tracking-tighter uppercase">eRPH Cloud 555</span>
             </div>
             <button id="logoutBtn" onclick="location.reload()" class="hidden bg-red-500 p-2 rounded-full hover:bg-red-600 transition"><span class="material-icons text-sm">power_settings_new</span></button>
         </div>
@@ -300,6 +300,7 @@ MASUK</button>
         }
 
         function handleFileUpload() {
+            if(!currentGroup) return alert("Ralat: Identiti Kumpulan tiada. Sila log masuk semula.");
             const week = document.getElementById('weekSelect').value;
             const fileInput = document.getElementById('rphFileInput');
             if(!week || !fileInput.files[0]) return alert("Pilih minggu dan fail!");
@@ -307,7 +308,7 @@ MASUK</button>
             const file = fileInput.files[0];
             const reader = new FileReader();
             reader.onload = (e) => {
-                const payload = { data: e.target.result.split(',')[1], mimeType: file.type, fileName: file.name, week: week, email: currentUserEmail };
+                const payload = { data: e.target.result.split(',')[1], mimeType: file.type, fileName: file.name, week: week, email: currentUserEmail, group: currentGroup };
                 runCloud('backendUpload', [payload], res => {
                     showLoading(false);
                     alert("RPH Berjaya Dihantar!");
