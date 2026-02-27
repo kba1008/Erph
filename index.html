@@ -178,7 +178,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbykak8KsUxK96XD0dq-ulXHKNlG27GWJvG5CTHeE79E-Fp-2WLfejIMNMRdEXFI4VcKQA/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbwv6ZOhMUDfKE7sHklsP7SAyAnmBkXawaUiFfanOp_R3V5Zeoa8U-dkygjiKmY0NLt0HQ/exec";
         
         let user = { email: "", groups: [], activeGroup: "", activeRole: "", name: "" };
 
@@ -385,7 +385,7 @@
                     fetchTeacherFiles(wk); 
                     // Refresh buttons to update color
                     doAction('getWeeksGuru');
-                } 
+                }
                 else { Swal.fire("Gagal", "Gagal memuat naik.", "error"); }
             };
             reader.readAsDataURL(f);
@@ -520,11 +520,16 @@
         async function commentFile(fid, oldComment, tName, fName) {
             const { value: c } = await Swal.fire({ title: "Ulasan Admin:", input: "text", inputValue: oldComment, showCancelButton: true });
             if(c === null || c === undefined) return;
-            showLoading(true, "MENYIMPAN ULASAN...");
+            showLoading(true, "MENYIMPAN ULASAN & ANALISIS AI...");
             const wk = document.getElementById('viewingWeek').innerText;
             const res = await runAPI('saveComment', { fileId: fid, comment: c, group: user.activeGroup, week: wk, teacherName: tName, fileName: fName });
             showLoading(false);
-            if(res && res.status === "success") { fetchAdminDashboard(wk); }
+            if(res && res.status === "success") { 
+                if(res.aiError) Swal.fire("Info AI", res.aiError, "warning").then(() => fetchAdminDashboard(wk));
+                else fetchAdminDashboard(wk); 
+            } else if (res && res.status === 'error') {
+                Swal.fire("Ralat", res.message, "error");
+            }
         }
 
         async function accessMaster() { 
