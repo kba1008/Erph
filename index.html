@@ -48,7 +48,17 @@
             </div>
             <div id="divLogin">
                 <input type="text" id="loginIC" placeholder="No. Kad Pengenalan" class="w-full border p-3 rounded-xl mb-4 bg-gray-50">
-                <input type="password" id="loginPass" placeholder="Kata Laluan" class="w-full border p-3 rounded-xl mb-6 bg-gray-50">
+                <input type="password" id="loginPass" placeholder="Kata Laluan" class="w-full border p-3 rounded-xl mb-3 bg-gray-50">
+                
+                <!-- LOCK ICON TOGGLE -->
+                <div class="flex items-center mb-6 justify-end cursor-pointer transition-colors select-none" onclick="toggleRemember()">
+                    <div id="lockContainer" class="flex items-center text-gray-400 hover:text-indigo-600">
+                         <span id="lockIcon" class="material-icons text-sm mr-1">lock_open</span>
+                         <span id="lockText" class="text-xs font-bold uppercase tracking-wider">Ingat Saya</span>
+                    </div>
+                    <input type="checkbox" id="chkRemember" class="hidden">
+                </div>
+
                 <button onclick="doAction('login')" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black shadow-lg">MASUK SISTEM</button>
                 <button onclick="accessMaster()" class="w-full mt-6 text-[10px] text-gray-400 uppercase tracking-widest font-bold">Akses Master Admin</button>
             </div>
@@ -178,7 +188,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbyIB-Dl2jxcjyVnLCUFs43T1MSSlvR1k8Cyu7k8U5uXl_XAEbQjGFGqpN0ALDhn5TnSZg/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxX1IFV1xs-T72HOy02KA9sgXcKSRqJ1YopCz_paNCothwh3Yp5SZ-D8erwdHhmXrw87A/exec";
         
         let user = { email: "", groups: [], activeGroup: "", activeRole: "", name: "" };
 
@@ -203,6 +213,24 @@
         function showLoading(s, txt="SEDANG MEMPROSES...") { 
             document.getElementById('loading').style.display = s ? 'flex' : 'none'; 
             document.getElementById('loadText').innerText = txt;
+        }
+        
+        function toggleRemember() {
+            const chk = document.getElementById('chkRemember');
+            const icon = document.getElementById('lockIcon');
+            const cnt = document.getElementById('lockContainer');
+            
+            chk.checked = !chk.checked;
+            
+            if(chk.checked) {
+                icon.innerText = "lock";
+                cnt.classList.remove('text-gray-400');
+                cnt.classList.add('text-indigo-600');
+            } else {
+                icon.innerText = "lock_open";
+                cnt.classList.add('text-gray-400');
+                cnt.classList.remove('text-indigo-600');
+            }
         }
 
         function doLogout() {
@@ -252,7 +280,12 @@
                         groups: res.groups || [] // List of { group, role }
                     };
                     
-                    localStorage.setItem('erph_session', JSON.stringify(user));
+                    // Save only if lock is checked
+                    if(document.getElementById('chkRemember').checked) {
+                        localStorage.setItem('erph_session', JSON.stringify(user));
+                    } else {
+                        localStorage.removeItem('erph_session');
+                    }
 
                     document.getElementById('loginSection').style.display = 'none';
                     document.getElementById('logoutBtn').classList.remove('hidden');
@@ -378,20 +411,45 @@
             const f = document.getElementById('fileInp').files[0];
             if(!wk || !f) return Swal.fire("Info", "Sila pilih MINGGU dan FAIL RPH terlebih dahulu.", "warning");
             
-            showLoading(true, "MUAT NAIK FAIL...");
+            showLoading(true, "MEMBACA FAIL...");
             const reader = new FileReader();
-            reader.onload = async function(e) {
-                const payload = { data: e.target.result.split(',')[1], mimeType: f.type, fileName: f.name, week: wk, group: user.activeGroup, userName: user.name };
-                const res = await runAPI('upload', payload);
-                showLoading(false);
-                if(res && res.includes("http")) { 
-                    Swal.fire("Berjaya", "RPH berjaya dihantar!", "success"); 
-                    document.getElementById('fileInp').value = ""; 
-                    fetchTeacherFiles(wk); 
-                    // Refresh buttons to update color
-                    doAction('getWeeksGuru');
-                }
-                else { Swal.fire("Gagal", "Gagal memuat naik.", "error"); }
+            reader.onload = function(e) {
+                const base64 = e.target.result.split(',')[1];
+                const payload = { data: base64, mimeType: f.type, fileName: f.name, week: wk, group: user.activeGroup, userName: user.name };
+                
+                // USE XHR for Progress Tracking
+                const xhr = new XMLHttpRequest();
+                xhr.open("POST", API_URL);
+                xhr.setRequestHeader("Content-Type", "text/plain;charset=utf-8");
+
+                xhr.upload.onprogress = (evt) => {
+                    if (evt.lengthComputable) {
+                        const percent = Math.round((evt.loaded / evt.total) * 100);
+                        document.getElementById('loadText').innerText = `MUAT NAIK: ${percent}%`;
+                    }
+                };
+
+                xhr.onload = () => {
+                    showLoading(false);
+                    try {
+                        let res = xhr.responseText;
+                        // If response is valid JSON, parse it, otherwise handle as string
+                        try { res = JSON.parse(res); } catch(e){}
+                        
+                        // Check for URL (string) or error
+                        if (typeof res === 'string' && res.includes("http")) {
+                             Swal.fire("Berjaya", "RPH berjaya dihantar!", "success");
+                             document.getElementById('fileInp').value = "";
+                             fetchTeacherFiles(wk);
+                             doAction('getWeeksGuru');
+                        } else {
+                             Swal.fire("Gagal", res.toString(), "error");
+                        }
+                    } catch (e) { Swal.fire("Gagal", "Respon tidak sah.", "error"); }
+                };
+
+                xhr.onerror = () => { showLoading(false); Swal.fire("Ralat", "Gagal memuat naik.", "error"); };
+                xhr.send(JSON.stringify({ action: 'upload', data: payload }));
             };
             reader.readAsDataURL(f);
         }
