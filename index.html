@@ -32,7 +32,7 @@
             </div>
             <div class="flex space-x-2">
                 <button id="changePassBtn" onclick="changeOwnPassword()" class="hidden bg-yellow-500 px-3 py-2 rounded-full text-xs font-bold text-black shadow-lg hover:bg-yellow-400">Tukar Pass</button>
-                <button id="logoutBtn" onclick="location.reload()" class="hidden bg-red-500 px-4 py-2 rounded-full text-xs font-bold shadow-lg">Log Keluar</button>
+                <button id="logoutBtn" onclick="doLogout()" class="hidden bg-red-500 px-4 py-2 rounded-full text-xs font-bold shadow-lg">Log Keluar</button>
             </div>
         </div>
     </nav>
@@ -167,13 +167,45 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycby0VrVsm-xobLnfvXTdhjJVHm0W62WEViS7uJrFCrNNzqv1QhoFTDRrukc9Ffd97C1Orw/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbwQQs8HS5ff9-wlyL15K7W4Ejj9eskOHTNw0vpYHCGo-teriv8P0GbGfdgB3RHI1cT8vA/exec";
         
         let user = { email: "", group: "", name: "" };
+
+        // --- SESSION RESTORE LOGIC ---
+        try {
+            const savedSess = localStorage.getItem('erph_session');
+            if(savedSess) {
+                const s = JSON.parse(savedSess);
+                if(s && s.ic) {
+                    user = s;
+                    // UI Restore
+                    document.addEventListener("DOMContentLoaded", () => {
+                        document.getElementById('loginSection').style.display = 'none';
+                        document.getElementById('logoutBtn').classList.remove('hidden');
+                        document.getElementById('changePassBtn').classList.remove('hidden');
+                        if(user.role === "ADMIN_KUMPULAN") {
+                            document.getElementById('adminPanel').classList.add('active-tab');
+                            document.getElementById('adminGroupName').innerText = user.group;
+                            setTimeout(()=>doAction('getWeeksAdmin'), 500);
+                        } else {
+                            document.getElementById('guruPanel').classList.add('active-tab');
+                            document.getElementById('welcomeGuru').innerText = user.name;
+                            document.getElementById('guruGroup').innerText = user.group;
+                            setTimeout(()=>doAction('getWeeksGuru'), 500);
+                        }
+                    });
+                }
+            }
+        } catch(e) { console.log("No session"); }
 
         function showLoading(s, txt="SEDANG MEMPROSES...") { 
             document.getElementById('loading').style.display = s ? 'flex' : 'none'; 
             document.getElementById('loadText').innerText = txt;
+        }
+
+        function doLogout() {
+            localStorage.removeItem('erph_session');
+            location.reload();
         }
 
         function toggleAuth(mode) {
@@ -211,6 +243,9 @@
                     if (!res.found) return alert("GAGAL: " + res.message);
                     
                     user = res;
+                    user.ic = ic; // Ensure IC is saved
+                    localStorage.setItem('erph_session', JSON.stringify(user));
+
                     document.getElementById('loginSection').style.display = 'none';
                     document.getElementById('logoutBtn').classList.remove('hidden');
                     document.getElementById('changePassBtn').classList.remove('hidden');
@@ -428,7 +463,7 @@
                 fetchMasterGroups();
                 fetchGlobalStats();
                 fetchMasterUsers();
-            } 
+            }
         }
 
         async function changeOwnPassword() {
@@ -437,7 +472,7 @@
             showLoading(true, "MENUKAR KATA LALUAN...");
             const res = await runAPI('changePassword', { ic: user.email, newPass: newP });
             showLoading(false);
-            if(res && res.status === 'success') { alert("Kata laluan berjaya ditukar! Sila log masuk semula."); location.reload(); }
+            if(res && res.status === 'success') { alert("Kata laluan berjaya ditukar! Sila log masuk semula."); doLogout(); }
             else { alert("Gagal menukar kata laluan."); }
         }
 
@@ -480,7 +515,10 @@
                             <p class="text-gray-400">IC: ${u.ic} | Pass: <span class="text-yellow-300">${u.password}</span></p>
                             <p class="text-[9px] text-gray-500">Group: ${u.group}</p>
                         </div>
-                        <button onclick="resetUserPassword('${u.ic}')" class="bg-red-600 text-white px-2 py-1 rounded text-[9px] hover:bg-red-500">RESET</button>
+                        <div class="flex space-x-1">
+                           <button onclick="resetUserPassword('${u.ic}')" class="bg-yellow-600 text-white px-2 py-1 rounded text-[9px] hover:bg-yellow-500">RESET</button>
+                           <button onclick="deleteUser('${u.ic}', '${u.name}')" class="bg-red-600 text-white px-2 py-1 rounded text-[9px] hover:bg-red-500"><span class="material-icons text-[10px]">close</span></button>
+                        </div>
                     </div>`;
                 });
             }
@@ -492,6 +530,15 @@
             const res = await runAPI('resetUserPassword', { ic: ic });
             showLoading(false);
             if(res && res.status === 'success') { alert(res.message); fetchMasterUsers(); }
+        }
+
+        async function deleteUser(ic, name) {
+            if(!confirm("AMARAN! Anda pasti mahu memadam pengguna '"+name+"' (IC: "+ic+")?\n\nData ini akan dipadam kekal dan nama guru ini akan dikeluarkan daripada senarai kumpulan.")) return;
+            showLoading(true, "MEMADAM PENGGUNA...");
+            const res = await runAPI('deleteUser', { ic: ic });
+            showLoading(false);
+            if(res && res.status === 'success') { alert(res.message); fetchMasterUsers(); fetchMasterGroups(); }
+            else { alert("Gagal: " + (res ? res.message : "Unknown")); }
         }
         
         async function fetchGlobalStats() {
