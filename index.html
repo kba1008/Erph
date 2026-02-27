@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>eRPH Cloud 551</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: none; justify-content: center; align-items: center; z-index: 9999; }
         .tab-content { display: none; }
         .active-tab { display: block; }
-        .card-week.selected { border-color: #4f46e5; background-color: #eef2ff; color: #4f46e5; }
+        .card-week.selected { border-color: #4f46e5 !important; background-color: #eef2ff !important; color: #4f46e5 !important; }
         .star-icon { cursor: pointer; transition: color 0.2s; }
         .star-icon:hover { color: #d97706; }
     </style>
@@ -154,7 +155,7 @@
                     
                     <div>
                         <label class="text-[10px] text-gray-400 font-bold uppercase ml-1">Nama Kumpulan (Unik)</label>
-                        <input type="text" id="mGName" placeholder="Contoh: PENTADBIR" class="w-full p-4 rounded-xl mt-1 bg-gray-100 focus:bg-white transition-all">
+                        <input type="text" id="mGName" placeholder="Contoh: SK BANDAR BARU" class="w-full p-4 rounded-xl mt-1 bg-gray-100 focus:bg-white transition-all">
                     </div>
                     
                     <div>
@@ -177,7 +178,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbzHY5FUiOSQyqpFQ1PmPphi9xiqOQIHYR9GDhWhGN59Ow9d7zBbDTmO0wCtQskN3o9Gwg/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbyJDddwW3hk5fvcck87od7X8H1278s2UWDMQEBp9hlPNE_pyH65dE_Qzn9BrAM5AlDapQ/exec";
         
         let user = { email: "", groups: [], activeGroup: "", activeRole: "", name: "" };
 
@@ -225,7 +226,7 @@
                     redirect: 'follow'
                 });
                 return await res.json();
-            } catch (err) { alert("Ralat Rangkaian. Sila semak internet anda."); return null; }
+            } catch (err) { Swal.fire("Ralat Rangkaian", "Sila semak internet anda.", "error"); return null; }
         }
 
         async function doAction(action) {
@@ -233,15 +234,15 @@
                 if (action === 'login') {
                     const ic = document.getElementById('loginIC').value;
                     const p = document.getElementById('loginPass').value;
-                    if(!ic || !p) return alert("Sila isi IC dan kata laluan!");
+                    if(!ic || !p) return Swal.fire("Ralat", "Sila isi IC dan kata laluan!", "warning");
                     
                     showLoading(true, "MENGESAHKAN AKAUN...");
                     const res = await runAPI('login', { ic: ic, password: p });
                     showLoading(false);
                     
                     if(!res) return;
-                    if (res.error) return alert("Ralat Server: " + res.error);
-                    if (!res.found) return alert("GAGAL: " + res.message);
+                    if (res.error) return Swal.fire("Ralat Server", res.error, "error");
+                    if (!res.found) return Swal.fire("GAGAL", res.message, "error");
                     
                     // Updated User Object
                     user = {
@@ -261,44 +262,63 @@
                 } 
                 else if (action === 'signup') {
                     const d = { name: document.getElementById('regName').value, ic: document.getElementById('regIC').value, pass: document.getElementById('regPass').value };
-                    if(!d.name || !d.ic || !d.pass) return alert("Lengkapkan maklumat.");
+                    if(!d.name || !d.ic || !d.pass) return Swal.fire("Ralat", "Lengkapkan maklumat.", "warning");
                     showLoading(true, "MENDAFTAR...");
                     const res = await runAPI('signup', d);
-                    showLoading(false); if(res) { alert(res); toggleAuth('login'); }
+                    showLoading(false); if(res) { Swal.fire("Info", res, "success").then(() => toggleAuth('login')); }
                 }
                 else if (action === 'getWeeksGuru') {
-                    const weeks = await runAPI('getWeeks', { group: user.activeGroup });
+                    // PASS role and userName for coloring logic
+                    const weeks = await runAPI('getWeeks', { group: user.activeGroup, role: 'GURU', userName: user.name });
                     if(!weeks) return;
                     const cont = document.getElementById('weekList');
                     cont.innerHTML = weeks.length ? "" : "<p class='text-xs text-red-500 col-span-2'>Tiada folder.</p>";
-                    weeks.forEach(w => {
+                    weeks.forEach(wObj => {
+                        let w = typeof wObj === 'string' ? wObj : wObj.name;
+                        let status = wObj.status || 'DEFAULT';
+                        let colorClass = "bg-white text-gray-700 border-gray-200"; // Default
+
+                        // GURU LOGIC COLORS
+                        if(status === 'RED') colorClass = "bg-red-50 text-red-900 border-red-300"; // Belum hantar
+                        else if(status === 'YELLOW') colorClass = "bg-yellow-50 text-yellow-900 border-yellow-300"; // Pending Sah
+                        else if(status === 'BLUE') colorClass = "bg-blue-50 text-blue-900 border-blue-300"; // Semua Sah
+
                         const btn = document.createElement('div');
-                        btn.className = "p-3 border-2 rounded-xl text-center text-sm font-bold cursor-pointer bg-white text-gray-700 card-week";
+                        btn.className = `p-3 border-2 rounded-xl text-center text-sm font-bold cursor-pointer card-week ${colorClass}`;
                         btn.innerText = w;
                         btn.onclick = () => { document.getElementById('selectedWeek').value = w; Array.from(cont.children).forEach(c => c.classList.remove('selected')); btn.classList.add('selected'); fetchTeacherFiles(w); fetchLeaderboard(w); };
                         cont.appendChild(btn);
                     });
                 }
                 else if (action === 'getWeeksAdmin') {
-                    const weeks = await runAPI('getWeeks', { group: user.activeGroup });
+                    // PASS role 'ADMIN' for coloring logic
+                    const weeks = await runAPI('getWeeks', { group: user.activeGroup, role: 'ADMIN' });
                     if(!weeks) return;
                     const cont = document.getElementById('adminWeekList');
                     cont.innerHTML = weeks.length ? "" : "<p class='text-xs text-gray-500 col-span-2'>Sila cipta minggu.</p>";
-                    weeks.forEach(w => {
+                    weeks.forEach(wObj => {
+                        let w = typeof wObj === 'string' ? wObj : wObj.name;
+                        let status = wObj.status || 'DEFAULT';
+                        let colorClass = "bg-white text-indigo-900 border-gray-200";
+
+                        // ADMIN LOGIC COLORS
+                        if(status === 'RED') colorClass = "bg-red-50 text-red-900 border-red-300"; // Ada belum sah
+                        else if(status === 'YELLOW') colorClass = "bg-yellow-50 text-yellow-900 border-yellow-300"; // Semua sah
+
                         const btn = document.createElement('div');
-                        btn.className = "p-3 border rounded-xl font-bold text-indigo-900 bg-white shadow-sm text-sm text-center cursor-pointer hover:bg-indigo-100 hover:shadow";
+                        btn.className = `p-3 border rounded-xl font-bold shadow-sm text-sm text-center cursor-pointer hover:shadow ${colorClass}`;
                         btn.innerText = w;
                         btn.onclick = () => { fetchAdminDashboard(w); }; 
                         cont.appendChild(btn);
                     });
                 }
                 else if (action === 'createWeek') {
-                    const n = prompt("Nama Minggu (Cth: MINGGU 1):");
+                    const { value: n } = await Swal.fire({ title: "Nama Minggu (Cth: MINGGU 1):", input: "text", showCancelButton: true });
                     if(!n) return;
                     showLoading(true, "MENCIPTA FOLDER...");
                     const res = await runAPI('createWeek', { weekName: n, group: user.activeGroup });
                     showLoading(false); 
-                    if(res) { alert(res.message); if(res.status === 'success') doAction('getWeeksAdmin'); }
+                    if(res) { Swal.fire("Info", res.message, res.status === 'success' ? "success" : "info"); if(res.status === 'success') doAction('getWeeksAdmin'); }
                 }
             } catch (error) { showLoading(false); }
         }
@@ -351,7 +371,7 @@
         function uploadRPH() {
             const wk = document.getElementById('selectedWeek').value;
             const f = document.getElementById('fileInp').files[0];
-            if(!wk || !f) return alert("Sila pilih MINGGU dan FAIL RPH terlebih dahulu.");
+            if(!wk || !f) return Swal.fire("Info", "Sila pilih MINGGU dan FAIL RPH terlebih dahulu.", "warning");
             
             showLoading(true, "MUAT NAIK FAIL...");
             const reader = new FileReader();
@@ -359,8 +379,14 @@
                 const payload = { data: e.target.result.split(',')[1], mimeType: f.type, fileName: f.name, week: wk, group: user.activeGroup, userName: user.name };
                 const res = await runAPI('upload', payload);
                 showLoading(false);
-                if(res && res.includes("http")) { alert("RPH berjaya dihantar!"); document.getElementById('fileInp').value = ""; fetchTeacherFiles(wk); } 
-                else { alert("Gagal memuat naik."); }
+                if(res && res.includes("http")) { 
+                    Swal.fire("Berjaya", "RPH berjaya dihantar!", "success"); 
+                    document.getElementById('fileInp').value = ""; 
+                    fetchTeacherFiles(wk); 
+                    // Refresh buttons to update color
+                    doAction('getWeeksGuru');
+                } 
+                else { Swal.fire("Gagal", "Gagal memuat naik.", "error"); }
             };
             reader.readAsDataURL(f);
         }
@@ -486,12 +512,12 @@
             const wk = document.getElementById('viewingWeek').innerText;
             const res = await runAPI('rateStar', { fileId: fid, rating: rating, group: user.activeGroup, week: wk, teacherName: tName, fileName: fName });
             showLoading(false);
-            if(res && res.status === "success") { fetchAdminDashboard(wk); }
+            if(res && res.status === "success") { fetchAdminDashboard(wk); doAction('getWeeksAdmin'); }
         }
 
         async function commentFile(fid, oldComment, tName, fName) {
-            const c = prompt("Ulasan Admin:", oldComment);
-            if(c === null) return;
+            const { value: c } = await Swal.fire({ title: "Ulasan Admin:", input: "text", inputValue: oldComment, showCancelButton: true });
+            if(c === null || c === undefined) return;
             showLoading(true, "MENYIMPAN ULASAN...");
             const wk = document.getElementById('viewingWeek').innerText;
             const res = await runAPI('saveComment', { fileId: fid, comment: c, group: user.activeGroup, week: wk, teacherName: tName, fileName: fName });
@@ -499,8 +525,9 @@
             if(res && res.status === "success") { fetchAdminDashboard(wk); }
         }
 
-        function accessMaster() { 
-            if(prompt("Kod Master (101010):") === "101010") { 
+        async function accessMaster() { 
+            const { value: code } = await Swal.fire({ title: "Kod Master (101010):", input: "password" });
+            if(code === "101010") { 
                 document.getElementById('loginSection').style.display = 'none'; 
                 document.getElementById('masterPanel').classList.add('active-tab'); 
                 document.getElementById('logoutBtn').classList.remove('hidden');
@@ -511,13 +538,13 @@
         }
 
         async function changeOwnPassword() {
-            const newP = prompt("Masukkan Kata Laluan Baharu:");
+            const { value: newP } = await Swal.fire({ title: "Masukkan Kata Laluan Baharu:", input: "password", showCancelButton: true });
             if(!newP) return;
             showLoading(true, "MENUKAR KATA LALUAN...");
             const res = await runAPI('changePassword', { ic: user.email, newPass: newP });
             showLoading(false);
-            if(res && res.status === 'success') { alert("Kata laluan berjaya ditukar! Sila log masuk semula."); doLogout(); }
-            else { alert("Gagal menukar kata laluan."); }
+            if(res && res.status === 'success') { await Swal.fire("Berjaya", "Kata laluan berjaya ditukar! Sila log masuk semula.", "success"); doLogout(); }
+            else { Swal.fire("Gagal", "Gagal menukar kata laluan.", "error"); }
         }
 
         async function fetchMasterGroups() {
@@ -569,20 +596,22 @@
         }
 
         async function resetUserPassword(ic) {
-            if(!confirm("Reset kata laluan pengguna ini kepada 'skselama1008'?")) return;
+            const r = await Swal.fire({ title: 'Reset Kata Laluan?', text: "Reset kepada 'skselama1008'?", icon: 'warning', showCancelButton: true });
+            if(!r.isConfirmed) return;
             showLoading(true, "RESET PASSWORD...");
             const res = await runAPI('resetUserPassword', { ic: ic });
             showLoading(false);
-            if(res && res.status === 'success') { alert(res.message); fetchMasterUsers(); }
+            if(res && res.status === 'success') { Swal.fire("Info", res.message, "success"); fetchMasterUsers(); }
         }
 
         async function deleteUser(ic, name) {
-            if(!confirm("AMARAN! Anda pasti mahu memadam pengguna '"+name+"' (IC: "+ic+")?\n\nData ini akan dipadam kekal dan nama guru ini akan dikeluarkan daripada senarai kumpulan.")) return;
+            const r = await Swal.fire({ title: "AMARAN!", text: "Anda pasti mahu memadam pengguna '"+name+"' (IC: "+ic+")? Data ini akan dipadam kekal.", icon: "error", showCancelButton: true, confirmButtonColor: "#d33", confirmButtonText: "Ya, Padam" });
+            if(!r.isConfirmed) return;
             showLoading(true, "MEMADAM PENGGUNA...");
             const res = await runAPI('deleteUser', { ic: ic });
             showLoading(false);
-            if(res && res.status === 'success') { alert(res.message); fetchMasterUsers(); fetchMasterGroups(); }
-            else { alert("Gagal: " + (res ? res.message : "Unknown")); }
+            if(res && res.status === 'success') { Swal.fire("Berjaya", res.message, "success"); fetchMasterUsers(); fetchMasterGroups(); }
+            else { Swal.fire("Gagal", res ? res.message : "Unknown", "error"); }
         }
         
         async function fetchGlobalStats() {
@@ -638,28 +667,29 @@
             const admin = document.getElementById('mGAdmin').value.trim();
             const members = document.getElementById('mGMembers').value.trim();
 
-            if (!name || !admin) return alert("Sila isi sekurang-kurangnya Nama Kumpulan dan IC Admin.");
+            if (!name || !admin) return Swal.fire("Ralat", "Sila isi sekurang-kurangnya Nama Kumpulan dan IC Admin.", "warning");
 
             if (mode === "new") {
                 showLoading(true, "MENDAFTAR KUMPULAN...");
                 const res = await runAPI('saveGroup', { groupName: name, adminEmail: admin, memberEmailsStr: members });
-                showLoading(false); if (res) { alert(res); resetMasterForm(); fetchMasterGroups(); } 
+                showLoading(false); if (res) { Swal.fire("Info", res, "success"); resetMasterForm(); fetchMasterGroups(); } 
             } else if (mode === "edit") {
                 showLoading(true, "MENGEMASKINI DATA...");
                 const res = await runAPI('updateGroup', { groupName: name, adminEmail: admin, memberEmailsStr: members });
                 showLoading(false); 
-                if (res && res.status === "success") { alert(res.message); resetMasterForm(); fetchMasterGroups(); }
-                else if (res) { alert(res.message); }
+                if (res && res.status === "success") { Swal.fire("Berjaya", res.message, "success"); resetMasterForm(); fetchMasterGroups(); }
+                else if (res) { Swal.fire("Info", res.message, "info"); }
             }
         }
 
         async function deleteMasterGroup(gName) {
-            if (confirm(`AMARAN!\n\nAnda pasti mahu memadam sekolah/kumpulan '${gName}'?\nSemua guru di bawah kumpulan ini akan ditarik akses sistem dengan serta merta.\n\n(Nota: Fail dalam Google Drive kekal selamat dan tidak dibuang)`)) {
+            const r = await Swal.fire({ title: "AMARAN!", html: "Anda pasti mahu memadam sekolah/kumpulan '"+gName+"'?<br>Semua guru di bawah kumpulan ini akan ditarik akses sistem dengan serta merta.<br><br>(Nota: Fail dalam Google Drive kekal selamat dan tidak dibuang)", icon: "warning", showCancelButton: true, confirmButtonColor: "#d33", confirmButtonText: "Ya, Padam" });
+            if (r.isConfirmed) {
                 showLoading(true, "MEMADAM KUMPULAN...");
                 const res = await runAPI('deleteGroup', { groupName: gName });
                 showLoading(false);
-                if (res && res.status === "success") { alert(res.message); resetMasterForm(); fetchMasterGroups(); }
-                else if (res) { alert(res.message); }
+                if (res && res.status === "success") { Swal.fire("Berjaya", res.message, "success"); resetMasterForm(); fetchMasterGroups(); }
+                else if (res) { Swal.fire("Info", res.message, "info"); }
             }
         }
 
@@ -687,4 +717,3 @@
     </script>
 </body>
 </html>
-
