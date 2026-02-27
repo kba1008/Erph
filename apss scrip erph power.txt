@@ -1,0 +1,654 @@
+const AI_SYS_PROMPT = "Anda adalah AI Analitik Sentimen untuk RPH Pendidikan. Tugas anda: Analisis komen pentadbir terhadap RPH guru. Berikan skor integer 0 hingga 5 berdasarkan kualiti dan nada komen. \nKRITERIA SKOR:\n0 = Tiada / Negatif / Sangat Lemah\n1 = Lemah / Perlu banyak pembetulan\n2 = Memuaskan / Ada kekurangan\n3 = Baik / Memenuhi syarat\n4 = Sangat Baik\n5 = Cemerlang / Tahniah\n\nARAHAN TEGAS: HANYA berikan SATU DIGIT NOMBOR (0,1,2,3,4, atau 5). JANGAN tulis sebarang penjelasan atau teks tambahan.";
+
+const SS_ID = "15qXW76aBfW6w2gMqUjSLOoFfJXX3emAy60jROZOn7kk"; 
+const MAIN_FOLDER_ID = "1UaRu8fInaCWKgvL-Sxbo9UZKpOG4d3KU"; 
+const SHEET_NAME_USER = "user";
+const SHEET_NAME_GROUPS = "groups";
+const SHEET_NAME_FOLDERS = "Folders"; 
+const SHEET_NAME_RATINGS = "Ratings";
+const SHEET_NAME_API = "API_KEY";
+
+function getSS() { return SpreadsheetApp.openById(SS_ID); }
+function getSheetSafe(name, headers) {
+  const ss = getSS();
+  let sheet = ss.getSheetByName(name);
+  if (!sheet) { sheet = ss.insertSheet(name); if (headers) sheet.appendRow(headers); }
+  return sheet;
+}
+
+// ROUTER UTAMA
+function doPost(e) {
+  try {
+    const req = JSON.parse(e.postData.contents);
+    const action = req.action;
+    const data = req.data;
+    let result;
+
+    if (action === "login") result = verifyUserLogin(data.ic, data.password);
+    else if (action === "signup") result = registerUserToDrive(data);
+    else if (action === "getWeeks") result = getAvailableWeeks(data.group, data.role, data.userName);
+    else if (action === "createWeek") result = backendCreateFolder(data.weekName, data.group);
+    else if (action === "upload") result = backendUpload(data);
+    else if (action === "saveGroup") result = saveGroup(data.groupName, data.adminEmail, data.memberEmailsStr);
+    else if (action === "getAdminSubmissionsData") result = getAdminSubmissionsData(data.group, data.week);
+    else if (action === "getTeacherFiles") result = getTeacherFiles(data.group, data.week, data.userName);
+    
+    // FUNGSI RATING & RANKING
+    else if (action === "rateStar") result = backendRateStar(data);
+    else if (action === "saveComment") result = backendSaveComment(data);
+    else if (action === "getLeaderboard") result = backendGetLeaderboard(data);
+    else if (action === "getGlobalStats") result = backendGetGlobalStats();
+
+    // FUNGSI MASTER
+    else if (action === "getAllGroups") result = backendGetAllGroups();
+    else if (action === "updateGroup") result = backendUpdateGroup(data);
+    else if (action === "deleteGroup") result = backendDeleteGroup(data.groupName);
+    else if (action === "getAllUsers") result = backendGetAllUsers();
+    else if (action === "resetUserPassword") result = backendResetPassword(data.ic);
+    else if (action === "changePassword") result = backendChangePassword(data.ic, data.newPass);
+    else if (action === "deleteUser") result = backendDeleteUser(data.ic);
+
+    return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ error: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function verifyUserLogin(ic, password) {
+  try {
+    const ss = getSS();
+    const userSheet = ss.getSheetByName(SHEET_NAME_USER);
+    const groupSheet = ss.getSheetByName(SHEET_NAME_GROUPS);
+    
+    const userData = userSheet.getDataRange().getValues();
+    let validUser = null;
+    const inputIC = ic.toString().trim().toLowerCase();
+    
+    for (let i = 1; i < userData.length; i++) {
+       let uIC = String(userData[i][2]).trim().toLowerCase();
+       if (uIC === inputIC) {
+         if (String(userData[i][3]) === String(password)) {
+           validUser = { name: userData[i][1], ic: uIC }; 
+         } else {
+           return { found: false, message: "Kata laluan salah." };
+         }
+         break;
+       }
+    }
+    
+    if (!validUser) return { found: false, message: "IC tidak berdaftar." };
+
+    const groupData = groupSheet ? groupSheet.getDataRange().getValues() : [];
+    let accessList = [];
+    
+    for (let i = 1; i < groupData.length; i++) {
+       let gName = groupData[i][0];
+       let admins = String(groupData[i][1]).toLowerCase().split(',').map(s=>s.trim());
+       let members = String(groupData[i][3]).toLowerCase().split(',').map(s=>s.trim());
+       
+       if (admins.includes(inputIC)) {
+         accessList.push({ group: gName, role: "ADMIN_KUMPULAN" });
+       } 
+       else if (members.includes(inputIC)) {
+         accessList.push({ group: gName, role: "GURU" });
+       }
+    }
+
+    return { 
+      found: true, 
+      name: validUser.name, 
+      email: validUser.ic,
+      groups: accessList 
+    };
+
+  } catch (err) { return { found: false, message: "Ralat: " + err.toString() }; }
+}
+
+function registerUserToDrive(data) {
+  try {
+    let sheet = getSheetSafe(SHEET_NAME_USER, ["Timestamp", "Nama", "Email", "Password", "Role", "Group"]);
+    const allData = sheet.getDataRange().getValues();
+    const inputIC = data.ic.toString().trim().toLowerCase();
+    for (let i = 1; i < allData.length; i++) {
+      let sheetIC = allData[i][2] ? allData[i][2].toString().trim().toLowerCase() : "";
+      if (sheetIC === inputIC) return "No. IC ini sudah berdaftar.";
+    }
+    sheet.appendRow([new Date(), data.name.trim(), inputIC, data.pass.trim(), "GURU", "PENDING"]);
+    return "Pendaftaran Berjaya! Sila maklumkan Admin.";
+  } catch (err) { return "Gagal mendaftar: " + err.toString(); }
+}
+
+function backendCreateFolder(weekName, groupName) {
+  try {
+    const groupSheet = getSS().getSheetByName(SHEET_NAME_GROUPS);
+    if(!groupSheet) return { status: "error", message: "Tab 'groups' tiada." };
+    const groups = groupSheet.getDataRange().getValues();
+    let targetParentId = MAIN_FOLDER_ID;
+    for(let i=1; i<groups.length; i++) { if(groups[i][0] === groupName) { targetParentId = groups[i][2]; break; } }
+    
+    const newFolder = DriveApp.getFolderById(targetParentId).createFolder(weekName);
+    newFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    let folderSheet = getSheetSafe(SHEET_NAME_FOLDERS, ["Week", "ID", "Date", "GroupName"]);
+    folderSheet.appendRow([weekName, newFolder.getId(), new Date(), groupName]);
+    return { status: "success", message: "Folder " + weekName + " berjaya dicipta." };
+  } catch (e) { return { status: "error", message: e.toString() }; }
+}
+
+function getAvailableWeeks(groupName, role, userName) {
+  const sheet = getSS().getSheetByName(SHEET_NAME_FOLDERS);
+  if(!sheet) return [];
+  const data = sheet.getDataRange().getValues().slice(1);
+  const weeks = data.filter(r => r[3] === groupName).map(r => r[0]).reverse();
+
+  if (!role) return weeks;
+
+  const rateSheet = getSheetSafe(SHEET_NAME_RATINGS, ["Timestamp", "Group", "Week", "TeacherName", "FileID", "FileName", "Rating", "Comment"]);
+  const rateData = rateSheet.getDataRange().getValues();
+  
+  let result = [];
+
+  weeks.forEach(w => {
+      let status = 'DEFAULT';
+      
+      if (role === 'GURU') {
+          let myFiles = rateData.filter(r => r[1] === groupName && r[2] === w && r[3] === userName);
+          let total = myFiles.length;
+          let verified = myFiles.filter(r => (parseInt(r[6]) || 0) > 0).length;
+
+          if (total === 0) status = 'RED'; 
+          else if (verified < total) status = 'YELLOW'; 
+          else if (verified === total) status = 'BLUE'; 
+      }
+      else if (role === 'ADMIN') {
+          let allFiles = rateData.filter(r => r[1] === groupName && r[2] === w);
+          let total = allFiles.length;
+          let verified = allFiles.filter(r => (parseInt(r[6]) || 0) > 0).length;
+          
+          if (total > 0 && verified < total) status = 'RED'; 
+          else if (total > 0 && verified === total) status = 'YELLOW'; 
+      }
+      
+      result.push({ name: w, status: status });
+  });
+
+  return result;
+}
+
+function backendUpload(obj) {
+  try {
+    const folderSheet = getSS().getSheetByName(SHEET_NAME_FOLDERS);
+    const folderData = folderSheet.getDataRange().getValues();
+    let targetId = "";
+    for(let i=1; i<folderData.length; i++) { 
+      if(folderData[i][0] === obj.week && folderData[i][3] === obj.group) { targetId = folderData[i][1]; break; } 
+    }
+    if(!targetId) return "Ralat: Folder minggu tidak dijumpai.";
+    
+    const newFileName = "[" + obj.userName + "] " + obj.fileName;
+    const blob = Utilities.newBlob(Utilities.base64Decode(obj.data), obj.mimeType, newFileName);
+    const newFile = DriveApp.getFolderById(targetId).createFile(blob);
+    newFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    const rateSheet = getSheetSafe(SHEET_NAME_RATINGS, ["Timestamp", "Group", "Week", "TeacherName", "FileID", "FileName", "Rating", "Comment"]);
+    rateSheet.appendRow([new Date(), obj.group, obj.week, obj.userName, newFile.getId(), newFileName, 0, ""]);
+
+    return newFile.getUrl();
+  } catch(e) { return "Ralat Upload: " + e.toString(); }
+}
+
+function saveGroup(groupName, adminEmail, memberEmailsStr) {
+  try {
+    const userSheet = getSheetSafe(SHEET_NAME_USER, ["Timestamp", "Nama", "Email", "Password", "Role", "Group"]);
+    const groupFolder = DriveApp.getFolderById(MAIN_FOLDER_ID).createFolder(groupName);
+    groupFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    let groupSheet = getSheetSafe(SHEET_NAME_GROUPS, ["Nama Kumpulan", "Admin Emel", "Folder ID", "Ahli"]);
+    groupSheet.appendRow([groupName, adminEmail, groupFolder.getId(), memberEmailsStr]);
+    
+    return "Kumpulan berjaya didaftarkan!";
+  } catch (e) { return "Ralat Kumpulan: " + e.toString(); }
+}
+
+function getRatingsMap() {
+  const sheet = getSheetSafe(SHEET_NAME_RATINGS, ["Timestamp", "Group", "Week", "TeacherName", "FileID", "FileName", "Rating", "Comment", "AIRating"]);
+  const data = sheet.getDataRange().getValues();
+  let map = {};
+  for(let i=1; i<data.length; i++) {
+    map[data[i][4]] = { rating: data[i][6], comment: data[i][7], aiRating: data[i][8] || 0 };
+  }
+  return map;
+}
+
+function getAdminSubmissionsData(groupName, weekName) {
+  try {
+    const userSheet = getSS().getSheetByName(SHEET_NAME_USER);
+    const groupSheet = getSS().getSheetByName(SHEET_NAME_GROUPS);
+    const groupData = groupSheet.getDataRange().getValues();
+    let teacherICs = [];
+    
+    for(let i=1; i<groupData.length; i++) {
+        if(groupData[i][0] === groupName) {
+            teacherICs = String(groupData[i][3]).toLowerCase().split(',').map(s=>s.trim());
+            break;
+        }
+    }
+    
+    const users = userSheet.getDataRange().getValues();
+    let teachers = [];
+    for(let i=1; i<users.length; i++) {
+        let uIC = String(users[i][2]).toLowerCase().trim();
+        if(teacherICs.includes(uIC)) teachers.push(users[i][1]);
+    }
+
+    const folderSheet = getSS().getSheetByName(SHEET_NAME_FOLDERS);
+    const folderData = folderSheet.getDataRange().getValues();
+    let targetId = "";
+    for(let i=1; i<folderData.length; i++) { 
+      if(folderData[i][0] === weekName && folderData[i][3] === groupName) { targetId = folderData[i][1]; break; } 
+    }
+    if(!targetId) return { status: "error", message: "Folder tidak wujud" };
+
+    const folder = DriveApp.getFolderById(targetId);
+    const files = folder.getFiles();
+    let allFiles = [];
+    while(files.hasNext()) {
+      let f = files.next();
+      allFiles.push({ id: f.getId(), name: f.getName(), url: f.getUrl() });
+    }
+
+    const ratingMap = getRatingsMap();
+    let dashboardData = [];
+    
+    teachers.forEach(teacherName => {
+        let teacherFiles = allFiles.filter(f => f.name.includes("[" + teacherName + "]"));
+        let totalStars = 0;
+        teacherFiles.forEach(f => {
+           if(ratingMap[f.id]) {
+             f.rating = ratingMap[f.id].rating;
+             f.comment = ratingMap[f.id].comment;
+             f.aiRating = ratingMap[f.id].aiRating;
+             totalStars += parseInt(f.rating || 0);
+           }
+        });
+
+        dashboardData.push({ teacherName: teacherName, files: teacherFiles, totalStars: totalStars });
+    });
+
+    return { status: "success", data: dashboardData };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function getTeacherFiles(groupName, weekName, userName) {
+  try {
+    const folderSheet = getSS().getSheetByName(SHEET_NAME_FOLDERS);
+    const folderData = folderSheet.getDataRange().getValues();
+    let targetId = "";
+    for(let i=1; i<folderData.length; i++) { 
+      if(folderData[i][0] === weekName && folderData[i][3] === groupName) { targetId = folderData[i][1]; break; } 
+    }
+    if(!targetId) return { status: "error", message: "Folder minggu tidak wujud" };
+
+    const folder = DriveApp.getFolderById(targetId);
+    const files = folder.getFiles();
+    let list = [];
+    const ratingMap = getRatingsMap();
+    
+    while(files.hasNext()) {
+        let f = files.next();
+        if(f.getName().includes("[" + userName + "]")) {
+             let fid = f.getId();
+             let r = ratingMap[fid] ? ratingMap[fid].rating : 0;
+             let c = ratingMap[fid] ? ratingMap[fid].comment : "";
+             let air = ratingMap[fid] ? ratingMap[fid].aiRating : 0;
+             list.push({ id: fid, name: f.getName(), url: f.getUrl(), rating: r, comment: c, aiRating: air }); 
+        }
+    }
+    
+    let scores = calculateCumulativeScore(groupName);
+    let myScore = scores[userName] ? parseFloat(scores[userName].toFixed(2)) : 0;
+    
+    return { status: "success", files: list, cumulativeScore: myScore };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+// --- NEW RATING LOGIC ---
+
+function backendRateStar(data) {
+  try {
+     const sheet = getSheetSafe(SHEET_NAME_RATINGS, ["Timestamp", "Group", "Week", "TeacherName", "FileID", "FileName", "Rating", "Comment"]);
+     const raw = sheet.getDataRange().getValues();
+     let rowToUpdate = -1;
+     
+     for(let i=1; i<raw.length; i++) {
+       if(raw[i][4] === data.fileId) { rowToUpdate = i + 1; break; }
+     }
+     
+     if(rowToUpdate !== -1) {
+       sheet.getRange(rowToUpdate, 7).setValue(data.rating);
+     } else {
+       sheet.appendRow([new Date(), data.group, data.week, data.teacherName, data.fileId, data.fileName, data.rating, ""]);
+     }
+     return { status: "success", message: "Rating Disimpan" };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendSaveComment(data) {
+  try {
+     const sheet = getSheetSafe(SHEET_NAME_RATINGS, ["Timestamp", "Group", "Week", "TeacherName", "FileID", "FileName", "Rating", "Comment", "AIRating"]);
+     const raw = sheet.getDataRange().getValues();
+     let rowToUpdate = -1;
+     
+     for(let i=1; i<raw.length; i++) {
+       if(raw[i][4] === data.fileId) { rowToUpdate = i + 1; break; }
+     }
+     
+     let aiRating = 0;
+     let aiError = null;
+
+     if(data.comment && data.comment.trim() !== "") {
+       try {
+         const apiKey = getGroqApiKey();
+         aiRating = callGroqAI(apiKey, data.comment);
+       } catch(aiErr) {
+         let eStr = aiErr.toString();
+         if(eStr.includes("401")) {
+            aiError = "RALAT API KEY (401): Pastikan API Key di tab 'API_KEY' betul & tiada 'space'.";
+         } else if(eStr.includes("permission") || eStr.includes("external_request")) {
+             aiError = "RALAT KEBENARAN: Sila buka Editor Apps Script, tekan 'Run' pada mana-mana fungsi untuk sahkan kebenaran (Authorize).";
+         } else {
+             aiError = "AI Gagal: " + eStr;
+         }
+         aiRating = 0; 
+       }
+     }
+
+     if(rowToUpdate !== -1) {
+       sheet.getRange(rowToUpdate, 8).setValue(data.comment);
+       sheet.getRange(rowToUpdate, 9).setValue(aiRating);
+     } else {
+       sheet.appendRow([new Date(), data.group, data.week, data.teacherName, data.fileId, data.fileName, 0, data.comment, aiRating]);
+     }
+     
+     let msg = "Komen Disimpan.";
+     if(aiError) msg += " " + aiError;
+     
+     return { status: "success", message: msg, aiError: aiError };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+// --- AI & API HELPERS ---
+
+// FUNGSI BAHARU: Ambil API Key dari Google Sheet
+function getGroqApiKey() {
+  const ss = getSS();
+  const sheet = ss.getSheetByName(SHEET_NAME_API); // SHEET_NAME_API = "API_KEY"
+  
+  if (!sheet) {
+    throw new Error("Tab 'API_KEY' tidak dijumpai di dalam Google Sheet.");
+  }
+  
+  // Ambil nilai dari sel A1, tukar ke string dan buang space kosong
+  const apiKey = sheet.getRange("A1").getValue().toString().trim();
+  
+  if (!apiKey || apiKey === "") {
+    throw new Error("Sila masukkan API Key Groq yang sah di sel A1 dalam tab 'API_KEY'.");
+  }
+  
+  return apiKey;
+}
+
+function callGroqAI(apiKey = "", comment = "") {
+  const url = "https://api.groq.com/openai/v1/chat/completions";
+  const payload = {
+    "model": "llama-3.3-70b-versatile",
+    "messages": [
+      { "role": "system", "content": AI_SYS_PROMPT },
+      { "role": "user", "content": comment }
+    ],
+    "temperature": 0.1,
+    "max_tokens": 10
+  };
+  
+  const options = {
+    "method": "post",
+    "headers": { 
+      "Authorization": "Bearer " + apiKey.trim(),
+      "Content-Type": "application/json"
+    },
+    "payload": JSON.stringify(payload),
+    "muteHttpExceptions": true
+  };
+  
+  const res = UrlFetchApp.fetch(url, options);
+  const code = res.getResponseCode();
+  const text = res.getContentText();
+
+  if (code !== 200) {
+    throw new Error("API Status " + code + ": " + text);
+  }
+
+  const json = JSON.parse(text);
+  if (!json.choices || !json.choices.length) {
+    throw new Error("Empty AI Response");
+  }
+  
+  const content = json.choices[0].message.content;
+  const match = content.match(/\d/);
+  if (!match) {
+    throw new Error("AI Output No Digit: " + content);
+  }
+
+  const rating = parseInt(match[0], 10);
+  return Math.min(Math.max(rating, 0), 5);
+}
+
+function calculateCumulativeScore(group) {
+  const sheet = getSheetSafe(SHEET_NAME_RATINGS, ["Timestamp", "Group", "Week", "TeacherName", "FileID", "FileName", "Rating", "Comment"]);
+  const raw = sheet.getDataRange().getValues();
+  let temp = {}; 
+  
+  for(let i=1; i<raw.length; i++) {
+     if(raw[i][1] === group) {
+        let t = raw[i][3];
+        let w = raw[i][2];
+        let r = parseInt(raw[i][6] || 0);
+        if(!temp[t]) temp[t] = {};
+        if(!temp[t][w]) temp[t][w] = { s: 0, c: 0 };
+        temp[t][w].s += r;
+        temp[t][w].c++;
+     }
+  }
+  
+  let final = {};
+  for(let t in temp) {
+     let sumWeekly = 0;
+     for(let w in temp[t]) {
+        let avg = temp[t][w].c > 0 ? (temp[t][w].s / temp[t][w].c) : 0;
+        sumWeekly += avg;
+     }
+     final[t] = sumWeekly;
+  }
+  return final;
+}
+
+function backendGetLeaderboard(data) {
+   try {
+      let scores = calculateCumulativeScore(data.group);
+      let arr = [];
+      for(let k in scores) {
+         arr.push({ name: k, score: parseFloat(scores[k].toFixed(2)) });
+      }
+      arr.sort((a, b) => b.score - a.score);
+      
+      return { status: "success", data: arr.slice(0, 3) };
+   } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendGetGlobalStats() {
+    try {
+        const sheet = getSheetSafe(SHEET_NAME_RATINGS, ["Timestamp", "Group", "Week", "TeacherName", "FileID", "FileName", "Rating", "Comment"]);
+        const raw = sheet.getDataRange().getValues();
+        let stats = {}; 
+        
+        for(let i=1; i<raw.length; i++) {
+            let grp = raw[i][1];
+            let name = raw[i][3];
+            let r = parseInt(raw[i][6] || 0);
+            let key = grp + "|" + name;
+            if(!stats[key]) stats[key] = 0;
+            stats[key] += r;
+        }
+        
+        let result = [];
+        for(let k in stats) {
+            let parts = k.split('|');
+            result.push({ group: parts[0], name: parts[1], total: stats[k] });
+        }
+        result.sort((a, b) => b.total - a.total);
+        return { status: "success", data: result };
+    } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendGetAllGroups() {
+  try {
+    const groupSheet = getSS().getSheetByName(SHEET_NAME_GROUPS);
+    if (!groupSheet) return { status: "success", data: [] };
+    const groups = groupSheet.getDataRange().getValues();
+    let result = [];
+    for (let i = 1; i < groups.length; i++) {
+      result.push({ groupName: groups[i][0], adminEmail: groups[i][1], members: groups[i][3] });
+    }
+    return { status: "success", data: result };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendUpdateGroup(data) {
+  try {
+    const groupName = data.groupName;
+    const newAdminEmail = data.adminEmail.toString().trim().toLowerCase(); 
+    const newMembersStr = data.memberEmailsStr;
+    
+    const groupSheet = getSS().getSheetByName(SHEET_NAME_GROUPS);
+
+    const groupData = groupSheet.getDataRange().getValues();
+    let groupRow = -1;
+    for(let i = 1; i < groupData.length; i++) {
+      if(groupData[i][0] === groupName) { groupRow = i + 1; break; }
+    }
+    if(groupRow === -1) return { status: "error", message: "Kumpulan tidak dijumpai." };
+    
+    groupSheet.getRange(groupRow, 2).setValue(newAdminEmail);
+    groupSheet.getRange(groupRow, 4).setValue(newMembersStr);
+    
+    return { status: "success", message: "Kumpulan berjaya dikemaskini!" };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendDeleteGroup(groupName) {
+  try {
+    const groupSheet = getSS().getSheetByName(SHEET_NAME_GROUPS);
+    const groupData = groupSheet.getDataRange().getValues();
+    for(let i = groupData.length - 1; i >= 1; i--) {
+      if(groupData[i][0] === groupName) { groupSheet.deleteRow(i + 1); break; }
+    }
+    
+    return { status: "success", message: "Kumpulan berjaya dipadam!" };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendGetAllUsers() {
+  try {
+    const sheet = getSS().getSheetByName(SHEET_NAME_USER);
+    const data = sheet.getDataRange().getValues();
+    let users = [];
+    for(let i=1; i<data.length; i++) {
+      users.push({ 
+        name: data[i][1], 
+        ic: data[i][2], 
+        password: data[i][3], 
+        group: data[i][5] 
+      });
+    }
+    return { status: "success", data: users };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendResetPassword(ic) {
+  try {
+    const sheet = getSS().getSheetByName(SHEET_NAME_USER);
+    const data = sheet.getDataRange().getValues();
+    let row = -1;
+    for(let i=1; i<data.length; i++) {
+      if(data[i][2].toString().trim().toLowerCase() === ic.toString().trim().toLowerCase()) {
+        row = i + 1;
+        break;
+      }
+    }
+    if(row !== -1) {
+      sheet.getRange(row, 4).setValue("skselama1008");
+      return { status: "success", message: "Kata laluan telah direset kepada: skselama1008" };
+    }
+    return { status: "error", message: "Pengguna tidak dijumpai" };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendChangePassword(ic, newPass) {
+  try {
+    const sheet = getSheetSafe(SHEET_NAME_USER);
+    const data = sheet.getDataRange().getValues();
+    let row = -1;
+    for(let i=1; i<data.length; i++) {
+      if(data[i][2].toString().trim().toLowerCase() === ic.toString().trim().toLowerCase()) {
+        row = i + 1;
+        break;
+      }
+    }
+    if(row !== -1) {
+      sheet.getRange(row, 4).setValue(newPass);
+      return { status: "success", message: "Kata laluan berjaya ditukar" };
+    }
+    return { status: "error", message: "Pengguna tidak dijumpai" };
+  } catch(e) { return { status: "error", message: e.toString() }; }
+}
+
+function backendDeleteUser(ic) {
+  const userSheet = getSS().getSheetByName(SHEET_NAME_USER);
+  const uData = userSheet.getDataRange().getValues();
+  let deleted = false;
+  for(let i=uData.length-1; i>=1; i--) {
+     if(String(uData[i][2]).trim() === String(ic).trim()) {
+       userSheet.deleteRow(i+1);
+       deleted = true;
+       break; 
+     }
+  }
+
+  if(deleted) {
+     const groupSheet = getSS().getSheetByName(SHEET_NAME_GROUPS);
+     if(groupSheet) {
+         const gData = groupSheet.getDataRange().getValues();
+         for(let i=1; i<gData.length; i++) {
+            let members = String(gData[i][3]).split(',').map(s=>s.trim());
+            if(members.includes(String(ic).trim())) {
+                let newM = members.filter(s => s !== String(ic).trim()).join(', ');
+                groupSheet.getRange(i+1, 4).setValue(newM);
+            }
+         }
+     }
+     return { status: 'success', message: 'Pengguna berjaya dipadam.' };
+  }
+  return { status: 'error', message: 'IC tidak dijumpai.' };
+}
+
+function testGroqAI() {
+  const apiKey = getGroqApiKey(); 
+  const komenUjian = "RPH sangat kemas, objektif tercapai dan aktiviti memfokuskan PAK21.";
+  
+  try {
+    const markah = callGroqAI(apiKey, komenUjian);
+    Logger.log("Berjaya! Markah AI yang diberi: " + markah);
+  } catch (e) {
+    Logger.log("Ralat: " + e.message);
+  }
+}
