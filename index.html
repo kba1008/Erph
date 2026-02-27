@@ -31,6 +31,7 @@
                 <span class="font-bold uppercase tracking-widest text-lg">eRPH Cloud</span>
             </div>
             <div class="flex space-x-2">
+                <button id="switchRoleBtn" onclick="switchRoleView()" class="hidden bg-green-500 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-green-600">Mod Guru</button>
                 <button id="changePassBtn" onclick="changeOwnPassword()" class="hidden bg-yellow-500 px-3 py-2 rounded-full text-xs font-bold text-black shadow-lg hover:bg-yellow-400">Tukar Pass</button>
                 <button id="logoutBtn" onclick="doLogout()" class="hidden bg-red-500 px-4 py-2 rounded-full text-xs font-bold shadow-lg">Log Keluar</button>
             </div>
@@ -167,7 +168,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbwQQs8HS5ff9-wlyL15K7W4Ejj9eskOHTNw0vpYHCGo-teriv8P0GbGfdgB3RHI1cT8vA/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbzTs800M-1Fdb4mPmsvOXmDe5vCUCcfGYDxEWj4OG2mjI-uI9r5W1al6J09KokkOlXv0Q/exec";
         
         let user = { email: "", group: "", name: "" };
 
@@ -186,6 +187,7 @@
                         if(user.role === "ADMIN_KUMPULAN") {
                             document.getElementById('adminPanel').classList.add('active-tab');
                             document.getElementById('adminGroupName').innerText = user.group;
+                            document.getElementById('switchRoleBtn').classList.remove('hidden');
                             setTimeout(()=>doAction('getWeeksAdmin'), 500);
                         } else {
                             document.getElementById('guruPanel').classList.add('active-tab');
@@ -253,6 +255,7 @@
                     if(res.role === "ADMIN_KUMPULAN") {
                         document.getElementById('adminPanel').classList.add('active-tab');
                         document.getElementById('adminGroupName').innerText = res.group;
+                        document.getElementById('switchRoleBtn').classList.remove('hidden');
                         doAction('getWeeksAdmin');
                     } else {
                         document.getElementById('guruPanel').classList.add('active-tab');
@@ -616,6 +619,28 @@
                 showLoading(false);
                 if (res && res.status === "success") { alert(res.message); resetMasterForm(); fetchMasterGroups(); }
                 else if (res) { alert(res.message); }
+            }
+        }
+
+        function switchRoleView() {
+            const adminPanel = document.getElementById('adminPanel');
+            const guruPanel = document.getElementById('guruPanel');
+            const btn = document.getElementById('switchRoleBtn');
+            
+            if (adminPanel.classList.contains('active-tab')) {
+                adminPanel.classList.remove('active-tab');
+                guruPanel.classList.add('active-tab');
+                btn.innerText = "Mod Admin";
+                btn.className = "bg-indigo-600 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-indigo-500";
+                document.getElementById('welcomeGuru').innerText = user.name;
+                document.getElementById('guruGroup').innerText = user.group;
+                doAction('getWeeksGuru');
+            } else {
+                guruPanel.classList.remove('active-tab');
+                adminPanel.classList.add('active-tab');
+                btn.innerText = "Mod Guru";
+                btn.className = "bg-green-500 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-green-600";
+                doAction('getWeeksAdmin');
             }
         }
     </script>
