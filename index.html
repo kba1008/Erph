@@ -178,7 +178,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbyJDddwW3hk5fvcck87od7X8H1278s2UWDMQEBp9hlPNE_pyH65dE_Qzn9BrAM5AlDapQ/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbyslqC1GNbCR3H9OkqVot_wbRpKloTRto59JFoEbSdz9qGQoEQhAdbiPi4FfBe3oK0-Vw/exec";
         
         let user = { email: "", groups: [], activeGroup: "", activeRole: "", name: "" };
 
@@ -409,7 +409,8 @@
             cont.innerHTML = "";
             res.files.forEach(f => {
                 let r = f.rating || 0;
-                let comment = f.comment ? `<div class='text-[10px] text-gray-500 italic mt-1 bg-yellow-50 p-1 rounded'>"${f.comment}"</div>` : "";
+                let aiBadge = f.aiRating ? `<span class="ml-2 bg-purple-100 text-purple-700 text-[9px] font-bold px-1 rounded border border-purple-200">AI: ${f.aiRating}★</span>` : "";
+                let comment = f.comment ? `<div class='text-[10px] text-gray-500 italic mt-1 bg-yellow-50 p-1 rounded flex justify-between items-start'><span>"${f.comment}"</span>${aiBadge}</div>` : "";
                 let starHtml = "";
                 for(let i=1; i<=5; i++) { starHtml += i <= r ? "<span class='text-yellow-500'>★</span>" : "<span class='text-gray-200'>★</span>"; }
                 
@@ -480,6 +481,7 @@
                     teacher.files.forEach(f => {
                         let cleanName = f.name.replace(`[${teacher.teacherName}] `, '');
                         let currentRating = f.rating || 0;
+                        let aiBadge = f.aiRating ? `<span class="float-right bg-purple-100 text-purple-700 text-[9px] font-bold px-1 rounded">AI: ${f.aiRating}★</span>` : "";
                         let stars = "";
                         for(let i=1; i<=5; i++) {
                             let color = i <= currentRating ? "text-yellow-500" : "text-gray-300";
@@ -498,7 +500,7 @@
                                     <span class="material-icons text-sm">${f.comment ? 'sms' : 'add_comment'}</span>
                                 </button>
                             </div>
-                            ${f.comment ? `<p class="text-[9px] text-gray-500 italic mt-1 border-l-2 border-yellow-400 pl-1">${f.comment}</p>` : ''}
+                            ${f.comment ? `<div class="text-[9px] text-gray-500 italic mt-1 border-l-2 border-yellow-400 pl-1 clearfix"><span>${f.comment}</span>${aiBadge}</div>` : ''}
                         </div>`;
                     });
                 }
