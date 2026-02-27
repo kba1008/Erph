@@ -178,7 +178,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbya2y1e5GfFWodPEa1IlAOO4pIlnDbWlkOrvAV1snSY8Eo6S1iV1PHJVR6lDrGBVi8/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbz1SsPn63EzzCPU2M5VdufVoA7G5cbB3PTvlXMLiQxjt87j9XUxB2PQlBPuCyShsyKjtg/exec";
         
         let user = { email: "", groups: [], activeGroup: "", activeRole: "", name: "" };
 
@@ -299,11 +299,16 @@
                     weeks.forEach(wObj => {
                         let w = typeof wObj === 'string' ? wObj : wObj.name;
                         let status = wObj.status || 'DEFAULT';
-                        let colorClass = "bg-white text-indigo-900 border-gray-200";
+                        
+                        // LOGIK WARNA ADMIN BARU:
+                        // 1. KUNING: Tiada submission (DEFAULT)
+                        // 2. MERAH: Ada submission tapi belum semak semua (RED)
+                        // 3. BIRU: Semua submission sudah disemak (YELLOW dari server)
+                        
+                        let colorClass = "bg-yellow-50 text-yellow-900 border-yellow-300"; 
 
-                        // ADMIN LOGIC COLORS
                         if(status === 'RED') colorClass = "bg-red-50 text-red-900 border-red-300"; // Ada belum sah
-                        else if(status === 'YELLOW') colorClass = "bg-yellow-50 text-yellow-900 border-yellow-300"; // Semua sah
+                        else if(status === 'YELLOW') colorClass = "bg-blue-50 text-blue-900 border-blue-300"; // Semua sah
 
                         const btn = document.createElement('div');
                         btn.className = `p-3 border rounded-xl font-bold shadow-sm text-sm text-center cursor-pointer hover:shadow ${colorClass}`;
