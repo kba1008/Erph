@@ -288,4 +288,490 @@
                     redirect: 'follow'
                 });
                 return await res.json();
-            } catch (err) { Swal.fire(
+            } catch (err) { 
+                Swal.fire({ icon: 'error', title: 'Ralat Sambungan', text: 'Sila periksa internet anda.' });
+                return null;
+            }
+        }
+
+        async function doAction(mode) {
+            if (mode === 'login') {
+                const ic = document.getElementById('loginIC').value.trim();
+                const pass = document.getElementById('loginPass').value.trim();
+                if (!ic || !pass) return Swal.fire('Ralat', 'Sila isi IC dan Kata Laluan', 'warning');
+
+                showLoading(true, "MENYEMAK ID...");
+                const res = await runAPI('login', { ic: ic, password: pass });
+                showLoading(false);
+
+                if (res && res.found) {
+                    user = res;
+                    user.ic = ic; // Ensure IC is saved
+
+                    // --- FIX: SAVING SESSION IF CHECKBOX CHECKED ---
+                    if (document.getElementById('chkRemember').checked) {
+                        localStorage.setItem('erph_session', JSON.stringify(user));
+                    } else {
+                        localStorage.removeItem('erph_session');
+                    }
+                    
+                    Swal.fire({ icon: 'success', title: 'Berjaya!', text: 'Selamat datang ' + user.name, timer: 1500, showConfirmButton: false });
+                    
+                    document.getElementById('loginSection').style.display = 'none';
+                    document.getElementById('logoutBtn').classList.remove('hidden');
+                    document.getElementById('changePassBtn').classList.remove('hidden');
+                    showGroupSelection();
+                } else {
+                    Swal.fire('Gagal', res ? res.message : 'ID atau Kata Laluan salah', 'error');
+                }
+
+            } else if (mode === 'signup') {
+                const name = document.getElementById('regName').value.trim();
+                const ic = document.getElementById('regIC').value.trim();
+                const pass = document.getElementById('regPass').value.trim();
+                
+                if(!name || !ic || !pass) return Swal.fire('Error', 'Sila isi semua info', 'warning');
+                
+                showLoading(true, "MENDAFTAR...");
+                const res = await runAPI('signup', { name: name, ic: ic, pass: pass });
+                showLoading(false);
+                
+                Swal.fire('Status', res, 'info');
+                toggleAuth('login');
+            }
+        }
+
+        function showGroupSelection() {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.getElementById('groupSelectionPanel').style.display = 'block';
+            document.getElementById('groupBtn').classList.remove('hidden');
+            
+            const container = document.getElementById('groupListContainer');
+            container.innerHTML = '';
+            
+            if(user.groups && user.groups.length > 0) {
+                 user.groups.forEach(g => {
+                     const btn = document.createElement('button');
+                     btn.className = "w-full text-left p-4 rounded-xl flex justify-between items-center transition-all shadow-md hover:scale-[1.02] mb-2 " + 
+                                     (g.role === 'ADMIN_KUMPULAN' ? "bg-gradient-to-r from-indigo-100 to-white border-l-4 border-indigo-600 text-indigo-900" : "bg-white border-l-4 border-emerald-500 text-emerald-900");
+                     btn.innerHTML = `<div><span class="font-black uppercase text-sm">${g.group}</span><br><span class="text-[10px] uppercase tracking-wider opacity-70 font-bold">${g.role.replace('_', ' ')}</span></div><span class="material-icons">chevron_right</span>`;
+                     btn.onclick = () => loadGroup(g.group, g.role);
+                     container.appendChild(btn);
+                 });
+            } else {
+                container.innerHTML = `<div class="text-center p-6 bg-red-50 rounded-xl border border-red-100"><span class="material-icons text-red-400 text-4xl mb-2">sentiment_dissatisfied</span><p class="text-red-800 font-bold text-sm">Tiada Kumpulan.</p><p class="text-xs text-red-600 mt-1">Hubungi admin sekolah anda.</p></div>`;
+            }
+        }
+
+        async function loadGroup(groupName, role) {
+            user.activeGroup = groupName;
+            user.activeRole = role;
+            
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            
+            if(role === 'ADMIN_KUMPULAN') {
+                document.getElementById('adminPanel').style.display = 'block';
+                document.getElementById('adminGroupName').innerText = groupName;
+                document.getElementById('switchRoleBtn').classList.remove('hidden');
+                loadAdminWeeks();
+            } else {
+                document.getElementById('guruPanel').style.display = 'block';
+                document.getElementById('welcomeGuru').innerText = user.name;
+                document.getElementById('guruGroup').innerText = groupName;
+                loadGuruWeeks();
+            }
+        }
+
+        async function loadGuruWeeks() {
+            showLoading(true, "MEMUATKAN DATA...");
+            const weekDiv = document.getElementById('weekList');
+            weekDiv.innerHTML = '<p class="text-xs text-slate-400 p-2 col-span-2 text-center">Sedang mengambil data...</p>';
+            
+            const weeks = await runAPI('getWeeks', { group: user.activeGroup, role: 'GURU', userName: user.name });
+            showLoading(false);
+            
+            weekDiv.innerHTML = '';
+            if(!weeks || weeks.length === 0) {
+                 weekDiv.innerHTML = '<p class="text-xs text-slate-400 p-2 col-span-2 text-center italic">Tiada minggu dibuka.</p>';
+                 return;
+            }
+
+            weeks.forEach(w => {
+                let colorClass = "bg-white border-slate-200 text-slate-600";
+                if (w.status === 'RED') colorClass = "bg-red-50 border-red-200 text-red-700";
+                else if (w.status === 'YELLOW') colorClass = "bg-yellow-50 border-yellow-200 text-yellow-700";
+                else if (w.status === 'BLUE') colorClass = "bg-blue-50 border-blue-200 text-blue-700";
+
+                const btn = document.createElement('div');
+                btn.className = `card-week p-3 rounded-xl border-2 text-center cursor-pointer font-bold text-xs transition-all hover:scale-105 ${colorClass}`;
+                btn.innerText = w.name;
+                btn.onclick = () => selectWeek(btn, w.name);
+                weekDiv.appendChild(btn);
+            });
+            
+            // Load leaderboard snippet
+            loadLeaderboard();
+        }
+
+        function selectWeek(el, weekName) {
+            document.querySelectorAll('.card-week').forEach(d => d.classList.remove('selected'));
+            el.classList.add('selected');
+            document.getElementById('selectedWeek').value = weekName;
+            loadTeacherFiles(weekName);
+        }
+
+        async function uploadRPH() {
+            const fileInp = document.getElementById('fileInp');
+            const week = document.getElementById('selectedWeek').value;
+            
+            if(!week) return Swal.fire('Ops', 'Sila pilih minggu dahulu.', 'warning');
+            if(fileInp.files.length === 0) return Swal.fire('Ops', 'Sila pilih fail RPH.', 'warning');
+            
+            const file = fileInp.files[0];
+            if(file.size > 5 * 1024 * 1024) return Swal.fire('Ralat', 'Saiz fail maksima 5MB', 'error');
+
+            showLoading(true, "MUAT NAIK...");
+            
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64 = e.target.result.split(',')[1];
+                const res = await runAPI('upload', {
+                    group: user.activeGroup,
+                    week: week,
+                    userName: user.name,
+                    fileName: file.name,
+                    mimeType: file.type,
+                    data: base64
+                });
+                
+                showLoading(false);
+                if(res && res.includes('http')) {
+                    Swal.fire('Berjaya', 'RPH berjaya dihantar!', 'success');
+                    fileInp.value = '';
+                    loadTeacherFiles(week);
+                } else {
+                    Swal.fire('Ralat', res || 'Gagal upload', 'error');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function loadTeacherFiles(week) {
+            document.getElementById('teacherFilesArea').classList.remove('hidden');
+            document.getElementById('lblTeacherWeek').innerText = week;
+            document.getElementById('teacherFileList').innerHTML = '<p class="text-xs animate-pulse">Memuatkan rekod...</p>';
+            
+            const res = await runAPI('getTeacherFiles', { group: user.activeGroup, week: week, userName: user.name });
+            
+            if(res && res.status === 'success') {
+                const list = document.getElementById('teacherFileList');
+                list.innerHTML = '';
+                document.getElementById('myWeeklyStars').innerText = res.cumulativeScore;
+                
+                if(res.files.length === 0) {
+                     list.innerHTML = '<p class="text-xs text-slate-400 italic">Tiada fail dihantar.</p>';
+                     return;
+                }
+                
+                res.files.forEach(f => {
+                     let stars = "";
+                     for(let i=0; i<5; i++) {
+                         stars += `<span class="material-icons text-[10px] ${i < f.rating ? 'text-yellow-400' : 'text-gray-200'}">star</span>`;
+                     }
+                     
+                     let aiBadge = "";
+                     if (f.aiRating && f.aiRating > 0) {
+                         aiBadge = `<span class="ml-2 bg-indigo-100 text-indigo-700 text-[9px] font-black px-1.5 rounded">AI: ${f.aiRating}/5</span>`;
+                     }
+
+                     const div = document.createElement('div');
+                     div.className = "bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex justify-between items-center";
+                     div.innerHTML = `<div><a href="${f.url}" target="_blank" class="font-bold text-xs text-indigo-600 hover:underline truncate block w-48">${f.name}</a>` +
+                                     `<div class="flex mt-1">${stars}${aiBadge}</div>` +
+                                     (f.comment ? `<p class="text-[10px] text-slate-500 mt-1 italic">"${f.comment}"</p>` : '') + `</div>` +
+                                     `<span class="material-icons text-green-400 text-sm">check_circle</span>`;
+                     list.appendChild(div);
+                });
+            } else {
+                document.getElementById('teacherFileList').innerHTML = '<p class="text-xs text-red-400">Gagal memuatkan rekod.</p>';
+            }
+        }
+
+        async function loadLeaderboard() {
+             const res = await runAPI('getLeaderboard', { group: user.activeGroup });
+             if(res.status === 'success' && res.data.length > 0) {
+                 document.getElementById('leaderboardArea').classList.remove('hidden');
+                 const div = document.getElementById('leaderboardList');
+                 div.innerHTML = '';
+                 res.data.forEach((d, i) => {
+                     div.innerHTML += `<div class="flex justify-between items-center text-xs font-bold text-slate-600 border-b border-indigo-100 pb-1 last:border-0"><span>${i+1}. ${d.name}</span><span class="text-indigo-600">${d.score} <span class="text-[8px]">★</span></span></div>`;
+                 });
+             }
+        }
+
+        // --- ADMIN FUNCTIONS ---
+        async function loadAdminWeeks() {
+            const div = document.getElementById('adminWeekList');
+            div.innerHTML = '<p class="text-xs text-slate-400">Memuatkan...</p>';
+            const weeks = await runAPI('getWeeks', { group: user.activeGroup, role: 'ADMIN' });
+            div.innerHTML = '';
+            
+            if(weeks.length === 0) div.innerHTML = '<p class="text-xs text-slate-400">Tiada minggu dicipta.</p>';
+            
+            weeks.forEach(w => {
+                let color = "bg-white text-slate-600";
+                if(w.status === 'RED') color = "bg-red-50 text-red-600 border-red-200";
+                else if(w.status === 'YELLOW') color = "bg-yellow-50 text-yellow-600 border-yellow-200";
+                
+                const btn = document.createElement('button');
+                btn.className = `p-3 rounded-xl border font-bold text-xs shadow-sm hover:scale-105 transition-transform ${color}`;
+                btn.innerText = w.name;
+                btn.onclick = () => loadAdminSubmission(w.name);
+                div.appendChild(btn);
+            });
+        }
+
+        async function loadAdminSubmission(week) {
+            document.getElementById('submissionArea').classList.remove('hidden');
+            document.getElementById('viewingWeek').innerText = week;
+            const grid = document.getElementById('adminTeacherGrid');
+            grid.innerHTML = '<p class="text-xs animate-pulse">Sedang mengambil data...</p>';
+            
+            const res = await runAPI('getAdminSubmissionsData', { group: user.activeGroup, week: week });
+            grid.innerHTML = '';
+            
+            if(res.status === 'success') {
+                res.data.forEach(t => {
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-4 rounded-2xl shadow-sm border border-slate-100";
+                    
+                    let filesHtml = "";
+                    if(t.files.length === 0) filesHtml = '<p class="text-[10px] text-red-400 italic">Tiada fail.</p>';
+                    else {
+                        t.files.forEach(f => {
+                            filesHtml += `<div class="mb-2 pb-2 border-b last:border-0 border-slate-50">` +
+                                         `<a href="${f.url}" target="_blank" class="text-xs font-bold text-blue-600 hover:underline block truncate">${f.name}</a>` +
+                                         `<div class="flex justify-between items-center mt-1">` +
+                                            `<div class="flex">` + 
+                                                [1,2,3,4,5].map(s => `<span onclick="rateFile('${t.teacherName}','${f.id}','${f.name}',${s})" class="material-icons text-sm star-icon ${s <= f.rating ? 'text-yellow-400' : 'text-gray-200'}">star</span>`).join('') +
+                                            `</div>` +
+                                            `<span class="text-[9px] font-bold text-slate-400 ml-1">Manual</span>` +
+                                         `</div>` +
+                                         (f.aiRating ? `<div class="mt-1 text-[9px] font-bold text-indigo-500 bg-indigo-50 inline-block px-1 rounded">AI SCORE: ${f.aiRating}/5</div>` : '') +
+                                         `<textarea id="comment_${f.id}" placeholder="Ulasan..." class="w-full text-[10px] mt-2 p-2 bg-slate-50 rounded border">${f.comment || ''}</textarea>` +
+                                         `<button onclick="saveComment('${t.teacherName}','${f.id}','${f.name}')" class="mt-1 bg-slate-800 text-white text-[9px] px-2 py-1 rounded w-full">SIMPAN ULASAN</button>` +
+                                         `</div>`;
+                        });
+                    }
+                    
+                    card.innerHTML = `<h4 class="font-black text-sm text-slate-800 mb-2 border-b pb-1">${t.teacherName}</h4>` + filesHtml;
+                    grid.appendChild(card);
+                });
+            }
+        }
+
+        async function rateFile(tName, fId, fName, rating) {
+            const week = document.getElementById('viewingWeek').innerText;
+            await runAPI('rateStar', {
+                group: user.activeGroup,
+                week: week,
+                teacherName: tName,
+                fileId: fId,
+                fileName: fName,
+                rating: rating
+            });
+            loadAdminSubmission(week); // Refresh to show updated stars
+        }
+
+        async function saveComment(tName, fId, fName) {
+            const comm = document.getElementById('comment_'+fId).value;
+            const week = document.getElementById('viewingWeek').innerText;
+            
+            Swal.fire({ title: 'Menyimpan...', didOpen: () => Swal.showLoading() });
+            
+            const res = await runAPI('saveComment', {
+                group: user.activeGroup,
+                week: week,
+                teacherName: tName,
+                fileId: fId,
+                fileName: fName,
+                comment: comm
+            });
+            
+            Swal.close();
+            if(res.status === 'success') {
+                if(res.aiError) Swal.fire('Disimpan', 'Komen disimpan tapi AI gagal: ' + res.aiError, 'warning');
+                else Swal.fire('Berjaya', 'Komen disimpan & AI telah menilai!', 'success');
+                loadAdminSubmission(week);
+            } else {
+                Swal.fire('Ralat', res.message, 'error');
+            }
+        }
+        
+        // --- UTIL / MASTER FUNCTIONS ---
+        function switchRoleView() {
+             // Toggle logic for Admin to see Guru view
+             if(user.activeRole === 'ADMIN_KUMPULAN') {
+                 // Temporarily view as guru
+                 loadGroup(user.activeGroup, 'GURU');
+                 // Change button text/color to indicate return
+                 const btn = document.getElementById('switchRoleBtn');
+                 btn.innerText = "Kembali Admin";
+                 btn.classList.remove('bg-green-500/80');
+                 btn.classList.add('bg-slate-700');
+                 btn.onclick = () => {
+                     loadGroup(user.activeGroup, 'ADMIN_KUMPULAN');
+                     btn.innerText = "Mod Guru";
+                     btn.classList.add('bg-green-500/80');
+                     btn.classList.remove('bg-slate-700');
+                     btn.onclick = switchRoleView;
+                 };
+             }
+        }
+
+        function accessMaster() {
+            Swal.fire({
+                title: 'Akses Master',
+                input: 'password',
+                inputPlaceholder: 'Kod Rahsia',
+                showCancelButton: true
+            }).then((res) => {
+                if(res.isConfirmed && res.value === 'master123') {
+                    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+                    document.getElementById('masterPanel').style.display = 'block';
+                    loadMasterData();
+                } else if (res.isConfirmed) {
+                    Swal.fire('Akses Ditolak', 'Kod salah', 'error');
+                }
+            });
+        }
+
+        async function loadMasterData() {
+             const uList = document.getElementById('masterUserList');
+             const res = await runAPI('getAllUsers', {});
+             if(res.status === 'success') {
+                 uList.innerHTML = '';
+                 res.data.forEach(u => {
+                     uList.innerHTML += `<div class="flex justify-between items-center text-[10px] bg-slate-700 p-2 rounded">` +
+                                        `<span><b class="text-blue-300">${u.ic}</b> - ${u.name}</span>` +
+                                        `<div><button onclick="resetUserPass('${u.ic}')" class="text-yellow-400 hover:underline mr-2">RESET</button>` +
+                                        `<button onclick="deleteUser('${u.ic}')" class="text-red-400 hover:underline">PADAM</button></div>` +
+                                        `</div>`;
+                 });
+             }
+             // Load groups...
+             const gList = document.getElementById('masterGroupList');
+             const resG = await runAPI('getAllGroups', {});
+             if(resG.status === 'success') {
+                 gList.innerHTML = '';
+                 resG.data.forEach(g => {
+                     gList.innerHTML += `<div class="bg-slate-700 p-3 rounded-xl border-l-4 border-green-500 flex justify-between items-center">` +
+                                        `<div><h4 class="font-bold text-sm text-white">${g.groupName}</h4><p class="text-[10px] text-slate-400">Admin: ${g.adminEmail}</p></div>` +
+                                        `<div class="space-x-1">` +
+                                        `<button onclick="editGroup('${g.groupName}','${g.adminEmail}','${g.members}')" class="text-xs bg-blue-600 px-2 py-1 rounded">EDIT</button>` +
+                                        `<button onclick="deleteGroup('${g.groupName}')" class="text-xs bg-red-600 px-2 py-1 rounded">HAPUS</button>` +
+                                        `</div></div>`;
+                 });
+             }
+             // Global stats
+             const sList = document.getElementById('masterStatsList');
+             const resS = await runAPI('getGlobalStats', {});
+             if(resS.status === 'success') {
+                 sList.innerHTML = '';
+                 resS.data.forEach((x, i) => {
+                     sList.innerHTML += `<div class="flex justify-between text-[10px] border-b border-slate-600 pb-1 mb-1"><span>${i+1}. ${x.name} (${x.group})</span><span class="text-yellow-400 font-bold">${x.total} ★</span></div>`;
+                 });
+             }
+        }
+
+        function editGroup(name, admin, members) {
+            document.getElementById('mGMode').value = 'edit';
+            document.getElementById('mGName').value = name;
+            document.getElementById('mGName').disabled = true;
+            document.getElementById('mGAdmin').value = admin;
+            document.getElementById('mGMembers').value = members;
+            document.getElementById('masterFormTitle').innerText = "EDIT KUMPULAN";
+            document.getElementById('btnSaveGroup').innerText = "KEMASKINI";
+            document.getElementById('btnSaveGroup').className = "flex-1 bg-blue-600 text-white py-4 rounded-xl font-black shadow-lg hover:bg-blue-500 transition-colors";
+            document.getElementById('btnCancelEdit').classList.remove('hidden');
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        function resetMasterForm() {
+            document.getElementById('mGMode').value = 'new';
+            document.getElementById('mGName').value = '';
+            document.getElementById('mGName').disabled = false;
+            document.getElementById('mGAdmin').value = '';
+            document.getElementById('mGMembers').value = '';
+            document.getElementById('masterFormTitle').innerHTML = '<span class="material-icons text-sm mr-1">add_circle</span> Daftar Kumpulan Baharu';
+            document.getElementById('btnSaveGroup').innerText = "DAFTAR KUMPULAN";
+            document.getElementById('btnSaveGroup').className = "flex-1 bg-red-600 text-white py-4 rounded-xl font-black shadow-lg hover:bg-red-500 transition-colors";
+            document.getElementById('btnCancelEdit').classList.add('hidden');
+        }
+
+        async function submitMasterGroup() {
+            const mode = document.getElementById('mGMode').value;
+            const name = document.getElementById('mGName').value;
+            const admin = document.getElementById('mGAdmin').value;
+            const members = document.getElementById('mGMembers').value;
+            
+            if(!name || !admin) return Swal.fire('Error', 'Nama & Admin wajib', 'warning');
+            
+            showLoading(true, "MENYIMPAN...");
+            const action = mode === 'new' ? 'saveGroup' : 'updateGroup';
+            const res = await runAPI(action, { groupName: name, adminEmail: admin, memberEmailsStr: members });
+            showLoading(false);
+            
+            Swal.fire('Info', typeof res === 'string' ? res : res.message, 'info');
+            if(mode === 'edit') resetMasterForm();
+            loadMasterData();
+        }
+
+        async function deleteGroup(name) {
+            Swal.fire({
+                title: 'Padam Kumpulan?', text: name,
+                icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33'
+            }).then(async (r) => {
+                if(r.isConfirmed) {
+                    showLoading(true, "MEMADAM...");
+                    await runAPI('deleteGroup', { groupName: name });
+                    showLoading(false);
+                    loadMasterData();
+                }
+            });
+        }
+
+        async function resetUserPass(ic) {
+             if(confirm("Reset password ke 'skselama1008'?")) {
+                 await runAPI('resetUserPassword', { ic: ic });
+                 alert("Direset.");
+             }
+        }
+        
+        async function deleteUser(ic) {
+             if(confirm("Padam pengguna ini selamanya?")) {
+                 await runAPI('deleteUser', { ic: ic });
+                 loadMasterData();
+             }
+        }
+        
+        function changeOwnPassword() {
+             Swal.fire({
+                 title: 'Tukar Kata Laluan',
+                 html: '<input id="swalPass" class="swal2-input" placeholder="Kata Laluan Baharu">',
+                 showCancelButton: true
+             }).then(async (res) => {
+                 if(res.isConfirmed) {
+                     const newP = document.getElementById('swalPass').value;
+                     if(newP) {
+                         showLoading(true);
+                         await runAPI('changePassword', { ic: user.ic, newPass: newP });
+                         showLoading(false);
+                         Swal.fire('Berjaya', 'Kata laluan ditukar.', 'success');
+                     }
+                 }
+             });
+        }
+    </script>
+</body>
+</html>
