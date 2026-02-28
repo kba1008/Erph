@@ -155,10 +155,16 @@
 
             <div id="submissionArea" class="hidden mt-6">
                 <h3 class="font-bold text-slate-800 border-b pb-2 mb-4 flex justify-between items-center">
-                    <span class="uppercase tracking-wide text-sm">Folder Guru</span>
+                    <span id="adminBreadcrumb" class="uppercase tracking-wide text-sm">Folder Guru</span>
                     <span id="viewingWeek" class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-[10px] font-black"></span>
                 </h3>
-                <div id="adminTeacherGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                <!-- FOLDER GRID CHANGED TO VERTICAL STACK -->
+                <div id="adminTeacherGrid" class="flex flex-col space-y-3"></div>
+                <!-- FILE LIST VIEW -->
+                <div id="adminTeacherFileView" class="hidden">
+                    <button onclick="backToTeacherGrid()" class="mb-4 bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded-lg text-xs font-bold flex items-center transition-colors shadow"><span class="material-icons text-sm mr-1">arrow_back</span> KEMBALI</button>
+                    <div id="adminFilesContainer" class="space-y-4"></div>
+                </div>
             </div>
         </div>
 
@@ -232,7 +238,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/macros/s/AKfycbywMrmGJU2w55y5OIaRVComw1EHyxoGVMBf2ntmFeSdCZlqPsfY3lTAbcKws0yHpFOTww/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbxhv6quLaGxnvc6iT9R-6Fool3wk90I0QywURKHmwG6p2hj9XzHDaD9sNpUDccZ3JDu6A/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -293,6 +299,9 @@
         const API_URL = SECURE_CORE.API_URL;
         
         let user = { email: "", groups: [], activeGroup: "", activeRole: "", name: "" };
+        // --- DATA ADMIN VARIABLES ---
+        let currentAdminData = [];
+        let viewingTeacherName = null;
 
         // --- SESSION RESTORE LOGIC ---
         try {
@@ -742,70 +751,133 @@
         async function fetchAdminDashboard(weekName) {
             document.getElementById('submissionArea').classList.remove('hidden');
             document.getElementById('viewingWeek').innerText = weekName;
-            const cont = document.getElementById('adminTeacherGrid');
-            cont.innerHTML = "<p class='text-xs text-center text-gray-500 animate-pulse col-span-2'>Menyusun fail guru...</p>";
+            
+            const grid = document.getElementById('adminTeacherGrid');
+            const fileView = document.getElementById('adminTeacherFileView');
+            const bread = document.getElementById('adminBreadcrumb');
+
+            // Setup UI based on state
+            if(!viewingTeacherName) {
+                grid.classList.remove('hidden');
+                fileView.classList.add('hidden');
+                bread.innerText = "FOLDER GURU";
+                grid.innerHTML = "<p class='text-xs text-center text-gray-500 animate-pulse col-span-2'>Menyusun fail guru...</p>";
+            }
 
             const res = await runAPI('getAdminSubmissionsData', { group: user.activeGroup, week: weekName });
-            if(!res || res.status === "error") return cont.innerHTML = `<p class='text-red-500 text-xs col-span-2'>${res?res.message:'Ralat sistem'}</p>`;
-            cont.innerHTML = "";
-            if(res.data.length === 0) return cont.innerHTML = "<p class='text-xs text-gray-500 col-span-2'>Tiada cikgu berdaftar.</p>";
+            if(!res || res.status === "error") {
+                grid.innerHTML = `<p class='text-red-500 text-xs col-span-2'>${res?res.message:'Ralat sistem'}</p>`;
+                return;
+            }
+            
+            currentAdminData = res.data;
+            grid.innerHTML = "";
 
-            res.data.forEach(teacher => {
-                // UPDATED LOGIC PER REQUEST: All files reviewed = Yellow, Any pending = Red
+            if(res.data.length === 0) {
+                 grid.innerHTML = "<p class='text-xs text-gray-500 col-span-2'>Tiada cikgu berdaftar.</p>";
+                 return;
+            }
+
+            // Render Folder Grid
+            res.data.forEach((teacher, idx) => {
                 let hasFiles = teacher.files.length > 0;
                 let allReviewed = hasFiles && teacher.files.every(f => (f.rating && parseInt(f.rating) > 0));
+                
+                let cardClass = "bg-gray-50 border-gray-200 text-gray-400";
+                let iconClass = "text-gray-300";
+                let status = "TIADA FAIL";
 
-                let bgColor = !hasFiles ? "bg-gray-50 border-gray-200" : (allReviewed ? "bg-yellow-50 border-yellow-200" : "bg-red-50 border-red-200");
-                let statusBadge = !hasFiles ? `<span class="text-gray-400 text-[10px] italic">-</span>` : (allReviewed ? `<span class="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-[9px] font-bold">SELESAI (${teacher.totalStars}★)</span>` : `<span class="bg-red-100 text-red-900 px-2 py-0.5 rounded text-[9px] font-bold animate-pulse">BELUM SIAP</span>`);
-
-                let cardHtml = `
-                <div class="${bgColor} border p-4 rounded-2xl flex flex-col shadow-sm hover:shadow-md transition-all">
-                    <div class="flex items-center justify-between mb-3 border-b border-black border-opacity-5 pb-2">
-                        <div class="flex items-center space-x-2">
-                            <span class="material-icons text-blue-400 text-3xl">folder</span>
-                            <h4 class="font-bold text-sm text-gray-800">${teacher.teacherName}</h4>
-                        </div>
-                        <div>${statusBadge}</div>
-                    </div>
-                    <div class="space-y-3 flex-1">`;
-
-                if(teacher.files.length === 0) { cardHtml += `<div class="py-2 text-center text-gray-400"><span class="material-icons text-xl opacity-50">description</span></div>`; } 
-                else {
-                    teacher.files.forEach(f => {
-                        let cleanName = f.name.replace(`[${teacher.teacherName}] `, '');
-                        let currentRating = f.rating || 0;
-                        let aiBadge = f.aiRating ? `<span class="float-right bg-purple-100 text-purple-700 text-[9px] font-bold px-1 rounded">AI: ${f.aiRating}★</span>` : "";
-                        let stars = "";
-                        for(let i=1; i<=5; i++) {
-                            let color = i <= currentRating ? "text-yellow-500" : "text-gray-300";
-                            stars += `<span class="material-icons text-sm ${color} star-icon" onclick="rateFile('${f.id}', ${i}, '${teacher.teacherName}', '${cleanName}')">star</span>`;
-                        }
-
-                        cardHtml += `
-                        <div class="bg-white p-2 rounded-lg border border-gray-100 shadow-sm">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="text-xs text-gray-700 font-bold truncate flex-1">📄 ${cleanName}</span>
-                                <div class="flex space-x-1">
-                                    <button onclick="window.open('${f.url}', '_blank')" class="text-[9px] bg-gray-50 px-2 py-1 rounded hover:bg-gray-200 border border-gray-200">Buka</button>
-                                    <!-- ANNOTATE ICON CHANGED HERE -->
-                                    <button onclick="openPDFForGrading('${f.id}', '${cleanName}')" class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-100 border border-indigo-200" title="Annotate">
-                                        <span class="material-icons text-sm">edit</span>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="flex justify-between items-center bg-gray-50 p-1 rounded">
-                                <div class="flex">${stars}</div>
-                                <button onclick="commentFile('${f.id}', '${f.comment||''}', '${teacher.teacherName}', '${cleanName}')" class="text-gray-400 hover:text-blue-600">
-                                    <span class="material-icons text-sm">${f.comment ? 'sms' : 'add_comment'}</span>
-                                </button>
-                            </div>
-                            ${f.comment ? `<div class="text-[9px] text-gray-500 italic mt-1 border-l-2 border-yellow-400 pl-1 clearfix"><span>${f.comment}</span>${aiBadge}</div>` : ''}
-                        </div>`;
-                    });
+                if(hasFiles) {
+                    if(allReviewed) {
+                        cardClass = "bg-blue-50 border-blue-200 text-blue-900";
+                        iconClass = "text-blue-500";
+                        status = "SELESAI";
+                    } else {
+                        cardClass = "bg-yellow-50 border-yellow-200 text-yellow-900";
+                        iconClass = "text-yellow-500";
+                        status = "PERLU SEMAKAN";
+                    }
                 }
-                cardHtml += `</div></div>`;
-                cont.innerHTML += cardHtml;
+
+                grid.innerHTML += `
+                <div onclick="openTeacherFiles(${idx})" class="${cardClass} border p-4 rounded-xl flex items-center justify-between cursor-pointer shadow-sm hover:shadow-md transition-all w-full">
+                    <div class="flex items-center space-x-3 overflow-hidden">
+                        <span class="material-icons ${iconClass} text-3xl">folder</span>
+                        <div class="flex flex-col min-w-0">
+                            <h4 class="font-bold text-sm truncate">${teacher.teacherName}</h4>
+                            <span class="text-[9px] font-bold opacity-80 uppercase tracking-wide">${status}</span>
+                        </div>
+                    </div>
+                    <div class="shrink-0 pl-2">
+                        <span class="text-[10px] font-bold bg-white/50 px-3 py-1 rounded-full border border-black/5">${teacher.files.length} Fail</span>
+                    </div>
+                </div>`;
             });
+
+            // Auto Restore View
+            if(viewingTeacherName) {
+                const idx = currentAdminData.findIndex(t => t.teacherName === viewingTeacherName);
+                if(idx >= 0) openTeacherFiles(idx);
+                else backToTeacherGrid();
+            }
+        }
+
+        function openTeacherFiles(idx) {
+            const teacher = currentAdminData[idx];
+            if(!teacher) return;
+
+            viewingTeacherName = teacher.teacherName;
+            document.getElementById('adminTeacherGrid').classList.add('hidden');
+            document.getElementById('adminTeacherFileView').classList.remove('hidden');
+            document.getElementById('adminBreadcrumb').innerText = "RPH: " + teacher.teacherName;
+
+            const cont = document.getElementById('adminFilesContainer');
+            cont.innerHTML = "";
+
+            if(teacher.files.length === 0) {
+                cont.innerHTML = "<p class='text-center text-gray-400 italic py-10'>Tiada fail dimuat naik.</p>";
+                return;
+            }
+
+            teacher.files.forEach(f => {
+                let cleanName = f.name.replace(`[${teacher.teacherName}] `, '');
+                let currentRating = f.rating || 0;
+                let aiBadge = f.aiRating ? `<span class="float-right bg-purple-100 text-purple-700 text-[9px] font-bold px-1 rounded">AI: ${f.aiRating}★</span>` : "";
+                let stars = "";
+                for(let i=1; i<=5; i++) {
+                    let color = i <= currentRating ? "text-yellow-500" : "text-gray-300";
+                    stars += `<span class="material-icons text-xl ${color} star-icon" onclick="rateFile('${f.id}', ${i}, '${teacher.teacherName}', '${cleanName}')">star</span>`;
+                }
+
+                cont.innerHTML += `
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="material-icons text-red-500">picture_as_pdf</span>
+                            <span class="text-sm font-bold text-gray-800 break-all">${cleanName}</span>
+                        </div>
+                        <div class="flex space-x-1 shrink-0">
+                            <button onclick="window.open('${f.url}', '_blank')" class="bg-indigo-50 text-indigo-700 p-2 rounded-lg hover:bg-indigo-100"><span class="material-icons text-sm">visibility</span></button>
+                            <button onclick="openPDFForGrading('${f.id}', '${cleanName}')" class="bg-pink-50 text-pink-700 p-2 rounded-lg hover:bg-pink-100 border border-pink-100"><span class="material-icons text-sm">edit</span></button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center bg-slate-50 p-2 rounded-lg border border-slate-100">
+                        <div class="flex space-x-1">${stars}</div>
+                        <button onclick="commentFile('${f.id}', '${f.comment||''}', '${teacher.teacherName}', '${cleanName}')" class="text-gray-400 hover:text-blue-600 flex items-center">
+                            <span class="material-icons text-lg">${f.comment ? 'sms' : 'add_comment'}</span>
+                        </button>
+                    </div>
+                    ${f.comment ? `<div class="mt-2 text-xs text-slate-600 italic bg-yellow-50 p-2 rounded border border-yellow-100 relative"><span class="material-icons text-[10px] text-yellow-500 absolute -top-1 -left-1 bg-white rounded-full">format_quote</span>${f.comment}${aiBadge}</div>` : ''}
+                </div>`;
+            });
+        }
+
+        function backToTeacherGrid() {
+            viewingTeacherName = null;
+            document.getElementById('adminTeacherGrid').classList.remove('hidden');
+            document.getElementById('adminTeacherFileView').classList.add('hidden');
+            document.getElementById('adminBreadcrumb').innerText = "FOLDER GURU";
         }
 
         async function rateFile(fid, rating, tName, fName) {
@@ -827,7 +899,8 @@
             if(res && res.status === "success") { 
                 if(res.aiError) Swal.fire("Info AI", res.aiError, "warning").then(() => fetchAdminDashboard(wk));
                 else fetchAdminDashboard(wk);
-            } else if (res && res.status === 'error') {
+            }
+            else if (res && res.status === 'error') {
                 Swal.fire("Ralat", res.message, "error");
             }
         }
