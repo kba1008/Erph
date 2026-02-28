@@ -151,6 +151,16 @@
         <div id="masterPanel" class="tab-content bg-slate-900/95 backdrop-blur p-8 rounded-3xl text-white mt-6 shadow-2xl border border-slate-700">
             <h2 class="text-2xl font-black text-red-500 mb-6 flex items-center tracking-tighter"><span class="material-icons mr-2">admin_panel_settings</span> KAWALAN PUSAT</h2>
             
+            <!-- LICENSE INFO BLOCK -->
+            <div class="mb-6 bg-gradient-to-r from-slate-800 to-slate-900 p-4 rounded-xl border border-slate-600 shadow-lg">
+                <h3 class="text-[10px] font-black text-green-400 uppercase tracking-widest mb-1">INFO LESEN APLIKASI</h3>
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-gray-400">Tarikh Mula: <span id="licStart" class="text-white font-mono">-</span></span>
+                    <span class="text-gray-400">Tarikh Tamat: <span id="licEnd" class="text-yellow-400 font-mono font-bold">-</span></span>
+                </div>
+                <p class="text-[9px] text-gray-500 mt-2 italic">Kod dilindungi oleh sistem keselamatan.</p>
+            </div>
+
             <!-- SENARAI USER -->
             <div class="mb-10 bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-inner">
                 <h3 class="text-xs font-black text-blue-400 mb-3 border-b border-slate-700 pb-2 uppercase tracking-widest">Senarai Pengguna (IC)</h3>
@@ -203,7 +213,70 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbz8sIrpE8bQWXOIY4sBrWbZ4ia7fcDwOzEtZxCYRN7EpDaP-MuSbzO4fMbWFE_kbD_0IA/exec";
+        /* -------------------------------------------------------------------------- */
+        /*             ZONA PERTAHANAN KOD RAHSIA (OBFUSCATE BLOK INI)                */
+        /* -------------------------------------------------------------------------- */
+        const SECURE_CORE = {
+            // CONFIG UTAMA
+            API_URL: "https://script.google.com/macros/s/AKfycbwhlNOclcfclHgYS0Un8vLt-NE1M5Mpdf7uSyJ5LpKk85Jj4pM_Z0AS8tdN9ahqKGlAkg/exec",
+            
+            // SISTEM LESEN (TARIKH MATI)
+            LICENSE: {
+                START_DATE: "2023-01-01",
+                END_DATE: "2026-12-31", // <-- SET TARIKH EXPIRED DI SINI
+                ACTIVE: true
+            },
+
+            // PERTAHANAN ANTI-CURI
+            SECURITY: {
+                DISABLE_RIGHT_CLICK: true,
+                DISABLE_DEV_TOOLS: true,
+                DISABLE_SELECTION: true
+            }
+        };
+
+        // INITIATE SECURITY PROTOCOLS
+        (function initDefenseSystem() {
+            // 1. Check Validity Date
+            const today = new Date();
+            const start = new Date(SECURE_CORE.LICENSE.START_DATE);
+            const end = new Date(SECURE_CORE.LICENSE.END_DATE);
+            
+            if (today < start || today > end) {
+                document.body.innerHTML = `
+                <div style="display:flex; justify-content:center; align-items:center; height:100vh; background:#0f172a; color:white; font-family:sans-serif; text-align:center;">
+                    <div>
+                        <h1 style="font-size:3rem; color:#ef4444; margin-bottom:1rem;">⛔ LESEN TAMAT</h1>
+                        <p>Aplikasi ini telah melepasi tarikh sah penggunaan (${SECURE_CORE.LICENSE.END_DATE}).</p>
+                        <p style="margin-top:1rem; color:#94a3b8; font-size:0.8rem;">Sila hubungi pembangun untuk pembaharuan lesen.</p>
+                    </div>
+                </div>`;
+                throw new Error("SYSTEM_HALTED: LICENSE_EXPIRED");
+            }
+
+            // 2. Anti-Right Click
+            if (SECURE_CORE.SECURITY.DISABLE_RIGHT_CLICK) {
+                document.addEventListener('contextmenu', e => e.preventDefault());
+            }
+
+            // 3. Anti-DevTools Keys
+            if (SECURE_CORE.SECURITY.DISABLE_DEV_TOOLS) {
+                document.addEventListener('keydown', function(e) {
+                    // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+                    if (e.key === 'F12' || 
+                       (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || 
+                       (e.ctrlKey && e.key === 'u')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+            }
+        })();
+        /* -------------------------------------------------------------------------- */
+        /*                        TAMAT ZONA PERTAHANAN                               */
+        /* -------------------------------------------------------------------------- */
+
+        const API_URL = SECURE_CORE.API_URL;
         
         let user = { email: "", groups: [], activeGroup: "", activeRole: "", name: "" };
 
@@ -610,6 +683,9 @@
                 let statusBadge = r > 0 ? `<span class="bg-green-500 text-white text-[9px] px-2 py-0.5 rounded ml-2 font-bold">DISEMAK (${r}★)</span>` : `<span class="bg-yellow-400 text-yellow-900 text-[9px] px-2 py-0.5 rounded ml-2 shadow-sm font-bold">MENUNGGU SEMAKAN</span>`;
                 let cleanName = f.name.replace(`[${user.name}] `, '');
 
+                // VERIFIER TEXT
+                let verifierText = f.verifier ? `<p class="text-[8px] text-right text-gray-400 mt-1 italic uppercase tracking-wider">Disahkan: <span class="text-indigo-500 font-bold">${f.verifier}</span></p>` : "";
+
                 cont.innerHTML += `
                 <div class="p-3 rounded-xl border bg-white border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                     <div class="flex justify-between items-center">
@@ -621,6 +697,7 @@
                     </div>
                     <div class="mt-2">${starHtml}</div>
                     ${comment}
+                    ${verifierText}
                 </div>`;
             });
         }
@@ -708,7 +785,8 @@
         async function rateFile(fid, rating, tName, fName) {
             showLoading(true, "MENILAI " + rating + " BINTANG...");
             const wk = document.getElementById('viewingWeek').innerText;
-            const res = await runAPI('rateStar', { fileId: fid, rating: rating, group: user.activeGroup, week: wk, teacherName: tName, fileName: fName });
+            // ADDED adminName: user.name
+            const res = await runAPI('rateStar', { fileId: fid, rating: rating, group: user.activeGroup, week: wk, teacherName: tName, fileName: fName, adminName: user.name });
             showLoading(false);
             if(res && res.status === "success") { fetchAdminDashboard(wk); doAction('getWeeksAdmin'); }
         }
@@ -734,6 +812,11 @@
                 document.getElementById('loginSection').style.display = 'none'; 
                 document.getElementById('masterPanel').classList.add('active-tab'); 
                 document.getElementById('logoutBtn').classList.remove('hidden');
+                
+                // POPULATE LICENSE INFO
+                document.getElementById('licStart').innerText = SECURE_CORE.LICENSE.START_DATE;
+                document.getElementById('licEnd').innerText = SECURE_CORE.LICENSE.END_DATE;
+
                 fetchMasterGroups();
                 fetchGlobalStats();
                 fetchMasterUsers();
