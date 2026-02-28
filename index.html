@@ -238,7 +238,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/macros/s/AKfycbw2h1nMycq07nwOi5kixC0npDTVDA72EeiqNzB7-aJg3L-Bd0hN26w2CtH5Q-mMaTIF8Q/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbwr2x_-ENBJB-3ZLB93DweEuwQzNIr9f77OpEE5_a2pL3vgYd2x55Cqm3yZ5YCWkyh4qg/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -521,9 +521,16 @@
                         else if(status === 'YELLOW') colorClass = "bg-blue-50 text-blue-900 border-blue-200"; // Semua sah
 
                         const btn = document.createElement('div');
-                        btn.className = `p-3 border rounded-xl font-bold shadow-sm text-sm text-center cursor-pointer hover:shadow-md transition-all ${colorClass}`;
-                        btn.innerText = w;
-                        btn.onclick = () => { fetchAdminDashboard(w); }; 
+                        btn.className = `p-3 border rounded-xl font-bold shadow-sm text-sm text-center cursor-pointer hover:shadow-md transition-all ${colorClass} flex flex-col justify-between`;
+                        
+                        // MODIFIED FOR RENAME/DELETE
+                        btn.innerHTML = `
+                            <div onclick="fetchAdminDashboard('${w}')" class="flex-1 text-center cursor-pointer flex items-center justify-center font-bold text-sm h-full">${w}</div>
+                            <div class="flex justify-between mt-2 pt-2 border-t border-black/5">
+                                <button onclick="renameWeekFolder('${w}')" class="p-1 hover:bg-black/10 rounded" title="Namakan Semula"><span class="material-icons text-[14px]">edit</span></button>
+                                <button onclick="deleteWeekFolder('${w}')" class="p-1 hover:bg-red-100 text-red-600 rounded" title="Padam Folder"><span class="material-icons text-[14px]">delete</span></button>
+                            </div>
+                        `;
                         cont.appendChild(btn);
                     });
                 }
@@ -718,9 +725,11 @@
                         </div>
                         <div class="flex space-x-1">
                            <button onclick="window.open('${f.url}', '_blank')" class="ml-2 bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-indigo-100">LIHAT</button>
-                           <!-- EDIT ICON CHANGED HERE -->
                            <button onclick="openPDFForGrading('${f.id}', '${cleanName}')" class="bg-pink-50 text-pink-700 px-3 py-2 rounded-lg hover:bg-pink-100 border border-pink-100" title="Edit/Annotate">
                               <span class="material-icons text-sm">edit</span>
+                           </button>
+                           <button onclick="deleteRPHFile('${f.id}', '${cleanName}')" class="bg-red-50 text-red-700 px-3 py-2 rounded-lg hover:bg-red-100 border border-red-100" title="Padam">
+                              <span class="material-icons text-sm">delete</span>
                            </button>
                         </div>
                     </div>
@@ -1198,7 +1207,41 @@
                 });
             }
         }
+
+        // --- NEW DELETE & RENAME FUNCTIONS ---
+
+        async function deleteRPHFile(fid, fname) {
+            const r = await Swal.fire({ title: 'Padam RPH?', text: "Fail '"+fname+"' akan dipadam dari Drive dan senarai.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' });
+            if(!r.isConfirmed) return;
+            showLoading(true, "MEMADAM FAIL...");
+            const wk = document.getElementById('lblTeacherWeek').innerText;
+            const res = await runAPI('deleteFile', { fileId: fid, group: user.activeGroup, week: wk });
+            showLoading(false);
+            if(res && res.status === 'success') {
+                Swal.fire("Berjaya", res.message, "success");
+                fetchTeacherFiles(wk);
+            } else { Swal.fire("Ralat", res?res.message:'Gagal', "error"); }
+        }
+
+        async function deleteWeekFolder(wName) {
+             const r = await Swal.fire({ title: 'Padam Folder Minggu?', html: "Folder <b>"+wName+"</b> dan SEMUA fail RPH di dalamnya akan dipadam kekal!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' });
+             if(!r.isConfirmed) return;
+             showLoading(true, "MEMADAM FOLDER...");
+             const res = await runAPI('deleteWeek', { weekName: wName, group: user.activeGroup });
+             showLoading(false);
+             if(res && res.status === 'success') { Swal.fire("Berjaya", res.message, "success"); doAction('getWeeksAdmin'); }
+             else { Swal.fire("Ralat", res?res.message:'Gagal', "error"); }
+        }
+
+        async function renameWeekFolder(oldName) {
+             const { value: newN } = await Swal.fire({ title: "Namakan Semula Folder", input: 'text', inputValue: oldName, showCancelButton: true });
+             if(!newN || newN === oldName) return;
+             showLoading(true, "MENGEMASKINI NAMA...");
+             const res = await runAPI('renameWeek', { oldName: oldName, newName: newN, group: user.activeGroup });
+             showLoading(false);
+             if(res && res.status === 'success') { Swal.fire("Berjaya", res.message, "success"); doAction('getWeeksAdmin'); }
+             else { Swal.fire("Ralat", res?res.message:'Gagal', "error"); }
+        }
     </script>
 </body>
 </html>
-
