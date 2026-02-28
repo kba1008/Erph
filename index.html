@@ -232,7 +232,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/macros/s/AKfycbz78MHqF8iin7H30Vc3tSOXnTI0zXNeFtFsv52IArt-Bmwz1K5Fxl0td0ZgccttFdnptA/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbywMrmGJU2w55y5OIaRVComw1EHyxoGVMBf2ntmFeSdCZlqPsfY3lTAbcKws0yHpFOTww/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -1073,8 +1073,8 @@
                     divId: "adobe-dc-view"
                 });
 
-                // FIX: Enable FULL_WINDOW on mobile to ensure Annotation Tools appear
-                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                // FIX: Enable FULL_WINDOW on mobile/iPad to ensure Annotation Tools appear
+                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
                 adobeDCView.previewFile({
                     content: { promise: pdfPromise },
@@ -1084,7 +1084,8 @@
                     showAnnotationTools: true,
                     enableFormFilling: true,
                     showDownloadPDF: false,
-                    showPrintPDF: false
+                    showPrintPDF: false,
+                    showLeftHandPanel: true 
                 });
 
                 // 5. Register Save Callback
