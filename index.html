@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- ADOBE PDF VIEWER SDK -->
+    <script src="https://acrobatservices.adobe.com/view-sdk/viewer.js"></script>
     <style>
         .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 9999; color: white; }
         .tab-content { display: none; animation: fadeIn 0.5s ease-out; }
@@ -26,6 +28,18 @@
             <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-pink-500 mb-4"></div>
             <p class="font-black text-xl text-white tracking-[0.2em] animate-pulse" id="loadText">SEDANG MEMPROSES...</p>
         </div>
+    </div>
+
+    <!-- PDF VIEWER MODAL -->
+    <div id="pdfModal" class="fixed inset-0 z-[100] hidden bg-black/95 flex flex-col">
+        <div class="flex justify-between items-center p-3 bg-slate-900 text-white border-b border-slate-700 shadow-xl">
+            <div class="flex items-center space-x-2 truncate">
+                <span class="material-icons text-red-500">picture_as_pdf</span>
+                <span id="pdfTitle" class="font-bold text-xs uppercase tracking-wide">PDF Editor</span>
+            </div>
+            <button onclick="closePDF()" class="bg-red-600 px-4 py-2 rounded-lg text-[10px] font-black hover:bg-red-500 shadow transition-colors flex items-center"><span class="material-icons text-sm mr-1">close</span>TUTUP</button>
+        </div>
+        <div id="adobe-dc-view" class="flex-1 w-full bg-gray-100"></div>
     </div>
 
     <nav class="glass-nav text-white p-4 sticky top-0 z-50 shadow-2xl">
@@ -218,7 +232,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/macros/s/AKfycbyrwRT_Z8eKzejHCM7C4on46seRo_eqMsoSnPxM_2oXJcbctqr_iy_l8C2x15gHvKw/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbzIfO5QCktCzoCBEfLrqYyiQwO85nPyyDJztcRTT0GmCBQZwL4JuEIv9RMu0PqU_xo_0Q/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -683,8 +697,8 @@
                 let statusBadge = r > 0 ? `<span class="bg-green-500 text-white text-[9px] px-2 py-0.5 rounded ml-2 font-bold">DISEMAK (${r}★)</span>` : `<span class="bg-yellow-400 text-yellow-900 text-[9px] px-2 py-0.5 rounded ml-2 shadow-sm font-bold">MENUNGGU SEMAKAN</span>`;
                 let cleanName = f.name.replace(`[${user.name}] `, '');
 
-                // VERIFIER TEXT - UPDATED WITH SMALL FONT
-                let verifierText = f.verifier ? `<div class="mt-2 pt-2 border-t border-gray-50"><p class="text-[9px] text-right text-gray-400 italic uppercase tracking-wider">Disahkan oleh: <span class="text-indigo-600 font-bold">${f.verifier}</span></p></div>` : "";
+                // VERIFIER TEXT - UPDATED WITH ICON FOR VISIBILITY
+                let verifierText = f.verifier ? `<div class="mt-2 pt-2 border-t border-gray-50 flex justify-end items-center"><span class="material-icons text-[10px] text-green-500 mr-1">verified</span><p class="text-[9px] text-gray-500 italic uppercase tracking-wider">Disahkan oleh: <span class="text-indigo-600 font-bold">${f.verifier}</span></p></div>` : "";
 
                 cont.innerHTML += `
                 <div class="p-3 rounded-xl border bg-white border-gray-100 shadow-sm hover:shadow-md transition-shadow">
@@ -693,7 +707,10 @@
                             <p class="text-xs font-bold text-gray-700 truncate">${cleanName}</p>
                             <div class="mt-1 flex items-center">${statusBadge}</div>
                         </div>
-                        <button onclick="window.open('${f.url}', '_blank')" class="ml-2 bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-indigo-100">LIHAT</button>
+                        <div class="flex space-x-1">
+                           <button onclick="window.open('${f.url}', '_blank')" class="ml-2 bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-indigo-100">LIHAT</button>
+                           <button onclick="openPDFForGrading('${f.id}', '${cleanName}')" class="bg-pink-50 text-pink-700 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-pink-100 border border-pink-100">EDIT</button>
+                        </div>
                     </div>
                     <div class="mt-2">${starHtml}</div>
                     ${comment}
@@ -765,7 +782,10 @@
                         <div class="bg-white p-2 rounded-lg border border-gray-100 shadow-sm">
                             <div class="flex justify-between items-center mb-1">
                                 <span class="text-xs text-gray-700 font-bold truncate flex-1">📄 ${cleanName}</span>
-                                <button onclick="window.open('${f.url}', '_blank')" class="text-[9px] bg-gray-50 px-2 py-1 rounded hover:bg-gray-200 border border-gray-200">Buka</button>
+                                <div class="flex space-x-1">
+                                    <button onclick="window.open('${f.url}', '_blank')" class="text-[9px] bg-gray-50 px-2 py-1 rounded hover:bg-gray-200 border border-gray-200">Buka</button>
+                                    <button onclick="openPDFForGrading('${f.id}', '${cleanName}')" class="text-[9px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-100 border border-indigo-200 font-bold">ANNOTATE</button>
+                                </div>
                             </div>
                             <div class="flex justify-between items-center bg-gray-50 p-1 rounded">
                                 <div class="flex">${stars}</div>
@@ -1004,7 +1024,64 @@
                 doAction('getWeeksAdmin');
             }
         }
+
+        // --- PDF LOGIC ---
+        function closePDF() {
+            document.getElementById('pdfModal').classList.add('hidden');
+        }
+
+        function openPDFForGrading(fid, fname) {
+            document.getElementById('pdfModal').classList.remove('hidden');
+            document.getElementById('pdfTitle').innerText = fname;
+            
+            const adobeDCView = new AdobeDC.View({
+                clientId: "346153bf58c54ffc8e8bd822f0ee06d1",
+                divId: "adobe-dc-view"
+            });
+
+            // Use Drive Direct Download Link logic
+            const driveUrl = "https://drive.google.com/uc?export=download&id=" + fid;
+
+            adobeDCView.previewFile({
+                content: { location: { url: driveUrl } },
+                metaData: { fileName: fname }
+            }, {
+                showAnnotationTools: true,
+                enableFormFilling: true,
+                showDownloadPDF: false,
+                showPrintPDF: false
+            });
+
+            adobeDCView.registerCallback(
+                AdobeDC.View.Enum.CallbackType.SAVE_API,
+                function(metaData, content, options) {
+                    showLoading(true, "MENYIMPAN PDF...");
+                    const bufferPromise = new Promise((resolve) => {
+                        const blob = new Blob([content], {type: 'application/pdf'});
+                        const reader = new FileReader();
+                        reader.readAsDataURL(blob);
+                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                    });
+
+                    return bufferPromise.then(base64 => {
+                        return runAPI('updatePDF', { fileId: fid, data: base64 });
+                    }).then(res => {
+                        showLoading(false);
+                        if(res && res.status === 'success') {
+                             Swal.fire("Berjaya", res.message, "success");
+                             closePDF();
+                             const role = user.activeRole;
+                             if(role === 'ADMIN_KUMPULAN') fetchAdminDashboard(document.getElementById('viewingWeek').innerText);
+                             else fetchTeacherFiles(document.getElementById('lblTeacherWeek').innerText);
+                             return { code: AdobeDC.View.Enum.ApiResponseCode.SUCCESS, data: metaData };
+                        } else {
+                             Swal.fire("Ralat", res ? res.message : "Gagal simpan", "error");
+                             return { code: AdobeDC.View.Enum.ApiResponseCode.FAIL };
+                        }
+                    });
+                }, { autoSaveFrequency: 0 }
+            );
+        }
     </script>
 </body>
 </html>
-
