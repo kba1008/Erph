@@ -21,12 +21,22 @@
         .glass-nav { background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
-<body class="bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900 min-h-screen font-sans selection:bg-pink-500 selection:text-white">
+<body class="bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900 min-h-screen font-sans selection:bg-pink-500 selection:text-white" onclick="closeContext()">
 
     <div id="loading" class="loading-overlay">
         <div class="text-center">
             <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-pink-500 mb-4"></div>
             <p class="font-black text-xl text-white tracking-[0.2em] animate-pulse" id="loadText">SEDANG MEMPROSES...</p>
+        </div>
+    </div>
+
+    <!-- CUSTOM CONTEXT MENU FOR FOLDER ACTIONS -->
+    <div id="folderCtxMenu" class="fixed z-[999] bg-white rounded-xl shadow-2xl border border-gray-100 w-48 py-2 hidden transform transition-all scale-95 origin-top-left">
+        <div onclick="triggerRename()" class="px-4 py-3 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center text-sm font-bold text-gray-700 transition-colors">
+            <span class="material-icons text-sm mr-3">edit</span>Namakan Semula
+        </div>
+        <div onclick="triggerDelete()" class="px-4 py-3 hover:bg-red-50 hover:text-red-600 cursor-pointer flex items-center text-sm font-bold text-gray-700 border-t border-gray-100 transition-colors">
+            <span class="material-icons text-sm mr-3">delete</span>Padam Folder
         </div>
     </div>
 
@@ -151,6 +161,7 @@
             </div>
             
             <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Senarai Folder Minggu</label>
+            <p class="text-[10px] text-indigo-400 mb-2 italic">* Klik kanan pada folder untuk menu 'Padam' atau 'Namakan Semula'.</p>
             <div id="adminWeekList" class="grid grid-cols-2 gap-3 bg-slate-50/50 p-4 rounded-2xl mb-6 mt-2 border border-slate-200"></div>
 
             <div id="submissionArea" class="hidden mt-6">
@@ -238,7 +249,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/macros/s/AKfycbwr2x_-ENBJB-3ZLB93DweEuwQzNIr9f77OpEE5_a2pL3vgYd2x55Cqm3yZ5YCWkyh4qg/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbwCGVU0fTP8RMALXuRx2pbtJb9UgnTRrP4vk7VrnHDn_dk05Tkhr7k_5YWhefUyDGMCEg/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -274,10 +285,10 @@
                 throw new Error("SYSTEM_HALTED: LICENSE_EXPIRED");
             }
 
-            // 2. Anti-Right Click
-            if (SECURE_CORE.SECURITY.DISABLE_RIGHT_CLICK) {
-                document.addEventListener('contextmenu', e => e.preventDefault());
-            }
+            // 2. Anti-Right Click (DISABLED FOR THIS VERSION TO ALLOW FOLDER CONTEXT MENU)
+            // if (SECURE_CORE.SECURITY.DISABLE_RIGHT_CLICK) {
+            //     document.addEventListener('contextmenu', e => e.preventDefault());
+            // }
 
             // 3. Anti-DevTools Keys
             if (SECURE_CORE.SECURITY.DISABLE_DEV_TOOLS) {
@@ -302,6 +313,8 @@
         // --- DATA ADMIN VARIABLES ---
         let currentAdminData = [];
         let viewingTeacherName = null;
+        // --- CONTEXT MENU VAR ---
+        let targetContextWeek = "";
 
         // --- SESSION RESTORE LOGIC ---
         try {
@@ -521,16 +534,17 @@
                         else if(status === 'YELLOW') colorClass = "bg-blue-50 text-blue-900 border-blue-200"; // Semua sah
 
                         const btn = document.createElement('div');
-                        btn.className = `p-3 border rounded-xl font-bold shadow-sm text-sm text-center cursor-pointer hover:shadow-md transition-all ${colorClass} flex flex-col justify-between`;
+                        // MODIFIED STYLE: Simpler card, right click capable
+                        btn.className = `p-6 border rounded-xl font-black shadow-sm text-sm text-center cursor-pointer hover:shadow-md transition-all ${colorClass} flex items-center justify-center select-none relative`;
+                        btn.innerText = w;
                         
-                        // MODIFIED FOR RENAME/DELETE
-                        btn.innerHTML = `
-                            <div onclick="fetchAdminDashboard('${w}')" class="flex-1 text-center cursor-pointer flex items-center justify-center font-bold text-sm h-full">${w}</div>
-                            <div class="flex justify-between mt-2 pt-2 border-t border-black/5">
-                                <button onclick="renameWeekFolder('${w}')" class="p-1 hover:bg-black/10 rounded" title="Namakan Semula"><span class="material-icons text-[14px]">edit</span></button>
-                                <button onclick="deleteWeekFolder('${w}')" class="p-1 hover:bg-red-100 text-red-600 rounded" title="Padam Folder"><span class="material-icons text-[14px]">delete</span></button>
-                            </div>
-                        `;
+                        // Right click trigger
+                        btn.oncontextmenu = (e) => {
+                            e.preventDefault();
+                            openContext(e, w);
+                        };
+                        
+                        btn.onclick = () => fetchAdminDashboard(w);
                         cont.appendChild(btn);
                     });
                 }
@@ -543,6 +557,32 @@
                     if(res) { Swal.fire("Info", res.message, res.status === 'success' ? "success" : "info"); if(res.status === 'success') doAction('getWeeksAdmin'); }
                 }
             } catch (error) { showLoading(false); }
+        }
+        
+        // --- CONTEXT MENU FUNCTIONS ---
+        function openContext(e, wName) {
+            targetContextWeek = wName;
+            const menu = document.getElementById('folderCtxMenu');
+            menu.style.left = `${e.clientX}px`;
+            menu.style.top = `${e.clientY}px`;
+            menu.classList.remove('hidden');
+            menu.classList.add('scale-100');
+        }
+
+        function closeContext() {
+            const menu = document.getElementById('folderCtxMenu');
+            menu.classList.add('hidden');
+            menu.classList.remove('scale-100');
+        }
+
+        function triggerRename() {
+            closeContext();
+            renameWeekFolder(targetContextWeek);
+        }
+
+        function triggerDelete() {
+            closeContext();
+            deleteWeekFolder(targetContextWeek);
         }
 
         function showGroupSelection() {
