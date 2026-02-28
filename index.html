@@ -1017,7 +1017,7 @@
             if (adminPanel.classList.contains('active-tab')) {
                 adminPanel.classList.remove('active-tab');
                 guruPanel.classList.add('active-tab');
-                btn.innerText = "Mod Guru";
+                btn.innerText = "Mod Admin";
                 btn.className = "bg-indigo-600 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-indigo-500 hover:scale-105 transition-transform";
                 document.getElementById('welcomeGuru').innerText = user.name;
                 document.getElementById('guruGroup').innerText = user.activeGroup;
@@ -1073,19 +1073,14 @@
                     divId: "adobe-dc-view"
                 });
 
-                // FIX: Enable FULL_WINDOW on mobile/iPad to ensure Annotation Tools appear
-                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
                 adobeDCView.previewFile({
                     content: { promise: pdfPromise },
                     metaData: { fileName: fname }
                 }, {
-                    embedMode: isMobile ? "FULL_WINDOW" : "SIZED_CONTAINER",
                     showAnnotationTools: true,
                     enableFormFilling: true,
                     showDownloadPDF: false,
-                    showPrintPDF: false,
-                    showLeftHandPanel: true 
+                    showPrintPDF: false
                 });
 
                 // 5. Register Save Callback
