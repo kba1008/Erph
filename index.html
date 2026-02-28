@@ -218,7 +218,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/macros/s/AKfycbwhlNOclcfclHgYS0Un8vLt-NE1M5Mpdf7uSyJ5LpKk85Jj4pM_Z0AS8tdN9ahqKGlAkg/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbzPH4Y7zFpsEM9FTaUis5-Ujz_W3K23cji9dvTIIRy-xNpvZkP0i-9aBC6dNqG5vhu1bg/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -683,8 +683,8 @@
                 let statusBadge = r > 0 ? `<span class="bg-green-500 text-white text-[9px] px-2 py-0.5 rounded ml-2 font-bold">DISEMAK (${r}★)</span>` : `<span class="bg-yellow-400 text-yellow-900 text-[9px] px-2 py-0.5 rounded ml-2 shadow-sm font-bold">MENUNGGU SEMAKAN</span>`;
                 let cleanName = f.name.replace(`[${user.name}] `, '');
 
-                // VERIFIER TEXT
-                let verifierText = f.verifier ? `<p class="text-[8px] text-right text-gray-400 mt-1 italic uppercase tracking-wider">Disahkan: <span class="text-indigo-500 font-bold">${f.verifier}</span></p>` : "";
+                // VERIFIER TEXT - UPDATED WITH SMALL FONT
+                let verifierText = f.verifier ? `<div class="mt-2 pt-2 border-t border-gray-50"><p class="text-[9px] text-right text-gray-400 italic uppercase tracking-wider">Disahkan oleh: <span class="text-indigo-600 font-bold">${f.verifier}</span></p></div>` : "";
 
                 cont.innerHTML += `
                 <div class="p-3 rounded-xl border bg-white border-gray-100 shadow-sm hover:shadow-md transition-shadow">
