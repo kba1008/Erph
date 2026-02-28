@@ -203,7 +203,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbzw01ccgiTkllj21ikuy7FSHqKjaYOXvajbro4kvEXba1cnMlp1nhGpOkBd6dsBTmhFGg/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbw1F1we_myP7ygEIiZScZCTepxUQT0fTv1OjjtmVL5-no9GyuIZc-P5NQhLp4iWUl--oQ/exec";
         
         let user = { email: "", groups: [], activeGroup: "", activeRole: "", name: "" };
 
@@ -760,7 +760,7 @@
 
             cont.innerHTML = "";
             res.data.forEach(g => {
-                let memberCount = g.members ? g.members.split(',').filter(m=>m.trim()!=='').length : 0;
+                let memberCount = g.members ? String(g.members).split(',').filter(m=>m.trim()!=='').length : 0;
                 cont.innerHTML += `
                 <div class="bg-slate-800 p-4 rounded-xl border border-slate-600 flex justify-between items-center shadow-md hover:bg-slate-700 transition-colors">
                     <div class="overflow-hidden pr-2">
