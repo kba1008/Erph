@@ -232,7 +232,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/macros/s/AKfycbzIfO5QCktCzoCBEfLrqYyiQwO85nPyyDJztcRTT0GmCBQZwL4JuEIv9RMu0PqU_xo_0Q/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbzb5Zs9sB7wS8r39kx4G0Eenoh3Bzljndw6Y5Rm5_eBfuoDZ_NWpWt_r2C2_v3tSx3CVg/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -709,7 +709,10 @@
                         </div>
                         <div class="flex space-x-1">
                            <button onclick="window.open('${f.url}', '_blank')" class="ml-2 bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-indigo-100">LIHAT</button>
-                           <button onclick="openPDFForGrading('${f.id}', '${cleanName}')" class="bg-pink-50 text-pink-700 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-pink-100 border border-pink-100">EDIT</button>
+                           <!-- EDIT ICON CHANGED HERE -->
+                           <button onclick="openPDFForGrading('${f.id}', '${cleanName}')" class="bg-pink-50 text-pink-700 px-3 py-2 rounded-lg hover:bg-pink-100 border border-pink-100" title="Edit/Annotate">
+                              <span class="material-icons text-sm">edit</span>
+                           </button>
                         </div>
                     </div>
                     <div class="mt-2">${starHtml}</div>
@@ -784,7 +787,10 @@
                                 <span class="text-xs text-gray-700 font-bold truncate flex-1">📄 ${cleanName}</span>
                                 <div class="flex space-x-1">
                                     <button onclick="window.open('${f.url}', '_blank')" class="text-[9px] bg-gray-50 px-2 py-1 rounded hover:bg-gray-200 border border-gray-200">Buka</button>
-                                    <button onclick="openPDFForGrading('${f.id}', '${cleanName}')" class="text-[9px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-100 border border-indigo-200 font-bold">ANNOTATE</button>
+                                    <!-- ANNOTATE ICON CHANGED HERE -->
+                                    <button onclick="openPDFForGrading('${f.id}', '${cleanName}')" class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-100 border border-indigo-200" title="Annotate">
+                                        <span class="material-icons text-sm">edit</span>
+                                    </button>
                                 </div>
                             </div>
                             <div class="flex justify-between items-center bg-gray-50 p-1 rounded">
@@ -820,7 +826,7 @@
             showLoading(false);
             if(res && res.status === "success") { 
                 if(res.aiError) Swal.fire("Info AI", res.aiError, "warning").then(() => fetchAdminDashboard(wk));
-                else fetchAdminDashboard(wk); 
+                else fetchAdminDashboard(wk);
             } else if (res && res.status === 'error') {
                 Swal.fire("Ralat", res.message, "error");
             }
@@ -1025,62 +1031,97 @@
             }
         }
 
-        // --- PDF LOGIC ---
+        // --- PDF LOGIC (FIXED FOR WHITE SCREEN & SAVING) ---
         function closePDF() {
             document.getElementById('pdfModal').classList.add('hidden');
         }
 
-        function openPDFForGrading(fid, fname) {
-            document.getElementById('pdfModal').classList.remove('hidden');
-            document.getElementById('pdfTitle').innerText = fname;
+        async function openPDFForGrading(fid, fname) {
+            // 1. Show Modal first so div is visible for Adobe SDK
+            const modal = document.getElementById('pdfModal');
+            modal.classList.remove('hidden');
             
-            const adobeDCView = new AdobeDC.View({
-                clientId: "346153bf58c54ffc8e8bd822f0ee06d1",
-                divId: "adobe-dc-view"
-            });
+            document.getElementById('pdfTitle').innerText = fname;
+            const viewDiv = document.getElementById("adobe-dc-view");
+            viewDiv.innerHTML = ""; // Clear previous instance
+            
+            showLoading(true, "MEMUAT TURUN PDF (PROXY)...");
 
-            // Use Drive Direct Download Link logic
-            const driveUrl = "https://drive.google.com/uc?export=download&id=" + fid;
+            try {
+                // 2. Fetch PDF Content as Base64 to bypass CORS issues
+                const res = await runAPI('getPDFContent', { fileId: fid });
+                
+                if(!res || res.status === 'error') {
+                    throw new Error(res ? res.message : "Gagal muat turun PDF.");
+                }
 
-            adobeDCView.previewFile({
-                content: { location: { url: driveUrl } },
-                metaData: { fileName: fname }
-            }, {
-                showAnnotationTools: true,
-                enableFormFilling: true,
-                showDownloadPDF: false,
-                showPrintPDF: false
-            });
+                // 3. Convert Base64 to ArrayBuffer
+                const base64 = res.data;
+                const binaryString = window.atob(base64);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                const pdfPromise = Promise.resolve(bytes.buffer);
 
-            adobeDCView.registerCallback(
-                AdobeDC.View.Enum.CallbackType.SAVE_API,
-                function(metaData, content, options) {
-                    showLoading(true, "MENYIMPAN PDF...");
-                    const bufferPromise = new Promise((resolve) => {
-                        const blob = new Blob([content], {type: 'application/pdf'});
-                        const reader = new FileReader();
-                        reader.readAsDataURL(blob);
-                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                    });
+                showLoading(false);
 
-                    return bufferPromise.then(base64 => {
-                        return runAPI('updatePDF', { fileId: fid, data: base64 });
-                    }).then(res => {
-                        showLoading(false);
-                        if(res && res.status === 'success') {
-                             Swal.fire("Berjaya", res.message, "success");
-                             closePDF();
-                             const role = user.activeRole;
-                             if(role === 'ADMIN_KUMPULAN') fetchAdminDashboard(document.getElementById('viewingWeek').innerText);
-                             else fetchTeacherFiles(document.getElementById('lblTeacherWeek').innerText);
-                             return { code: AdobeDC.View.Enum.ApiResponseCode.SUCCESS, data: metaData };
-                        } else {
-                             Swal.fire("Ralat", res ? res.message : "Gagal simpan", "error");
-                             return { code: AdobeDC.View.Enum.ApiResponseCode.FAIL };
-                        }
-                    });
-                }, { autoSaveFrequency: 0 }
-            );
+                // 4. Initialize Adobe Viewer
+                const adobeDCView = new AdobeDC.View({
+                    clientId: "346153bf58c54ffc8e8bd822f0ee06d1", // Note: Ensure this Client ID matches your domain
+                    divId: "adobe-dc-view"
+                });
+
+                adobeDCView.previewFile({
+                    content: { promise: pdfPromise },
+                    metaData: { fileName: fname }
+                }, {
+                    showAnnotationTools: true,
+                    enableFormFilling: true,
+                    showDownloadPDF: false,
+                    showPrintPDF: false
+                });
+
+                // 5. Register Save Callback
+                adobeDCView.registerCallback(
+                    AdobeDC.View.Enum.CallbackType.SAVE_API,
+                    function(metaData, content, options) {
+                        showLoading(true, "MENYIMPAN PDF...");
+                        const bufferPromise = new Promise((resolve) => {
+                            const blob = new Blob([content], {type: 'application/pdf'});
+                            const reader = new FileReader();
+                            reader.readAsDataURL(blob);
+                            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                        });
+
+                        return bufferPromise.then(base64 => {
+                            return runAPI('updatePDF', { fileId: fid, data: base64 });
+                        }).then(res => {
+                            showLoading(false);
+                            if(res && res.status === 'success') {
+                                 Swal.fire("Berjaya", res.message, "success");
+                                 closePDF();
+                                 const role = user.activeRole;
+                                 if(role === 'ADMIN_KUMPULAN') fetchAdminDashboard(document.getElementById('viewingWeek').innerText);
+                                 else fetchTeacherFiles(document.getElementById('lblTeacherWeek').innerText);
+                                 return { code: AdobeDC.View.Enum.ApiResponseCode.SUCCESS, data: metaData };
+                            } else {
+                                 Swal.fire("Ralat", res ? res.message : "Gagal simpan", "error");
+                                 return { code: AdobeDC.View.Enum.ApiResponseCode.FAIL };
+                            }
+                        });
+                    }, { autoSaveFrequency: 0 }
+                );
+
+            } catch (err) {
+                showLoading(false);
+                Swal.fire("Ralat PDF", err.message + "\n(Cuba buka di tab baru)", "error").then(() => {
+                    // Fallback
+                    window.open("https://drive.google.com/file/d/" + fid + "/view", "_blank");
+                    closePDF();
+                });
+            }
         }
     </script>
 </body>
