@@ -203,7 +203,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbw1F1we_myP7ygEIiZScZCTepxUQT0fTv1OjjtmVL5-no9GyuIZc-P5NQhLp4iWUl--oQ/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbz8sIrpE8bQWXOIY4sBrWbZ4ia7fcDwOzEtZxCYRN7EpDaP-MuSbzO4fMbWFE_kbD_0IA/exec";
         
         let user = { email: "", groups: [], activeGroup: "", activeRole: "", name: "" };
 
@@ -879,12 +879,12 @@
             if (mode === "new") {
                 showLoading(true, "MENDAFTAR KUMPULAN...");
                 const res = await runAPI('saveGroup', { groupName: name, adminEmail: admin, memberEmailsStr: members });
-                showLoading(false); if (res) { Swal.fire("Info", res, "success"); resetMasterForm(); fetchMasterGroups(); } 
+                showLoading(false); if (res) { Swal.fire("Info", res, "success"); resetMasterForm(); fetchMasterGroups(); fetchMasterUsers(); } 
             } else if (mode === "edit") {
                 showLoading(true, "MENGEMASKINI DATA...");
                 const res = await runAPI('updateGroup', { groupName: name, adminEmail: admin, memberEmailsStr: members });
                 showLoading(false); 
-                if (res && res.status === "success") { Swal.fire("Berjaya", res.message, "success"); resetMasterForm(); fetchMasterGroups(); }
+                if (res && res.status === "success") { Swal.fire("Berjaya", res.message, "success"); resetMasterForm(); fetchMasterGroups(); fetchMasterUsers(); }
                 else if (res) { Swal.fire("Info", res.message, "info"); }
             }
         }
@@ -895,7 +895,7 @@
                 showLoading(true, "MEMADAM KUMPULAN...");
                 const res = await runAPI('deleteGroup', { groupName: gName });
                 showLoading(false);
-                if (res && res.status === "success") { Swal.fire("Berjaya", res.message, "success"); resetMasterForm(); fetchMasterGroups(); }
+                if (res && res.status === "success") { Swal.fire("Berjaya", res.message, "success"); resetMasterForm(); fetchMasterGroups(); fetchMasterUsers(); }
                 else if (res) { Swal.fire("Info", res.message, "info"); }
             }
         }
