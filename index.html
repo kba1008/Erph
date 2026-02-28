@@ -232,7 +232,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/macros/s/AKfycbzb5Zs9sB7wS8r39kx4G0Eenoh3Bzljndw6Y5Rm5_eBfuoDZ_NWpWt_r2C2_v3tSx3CVg/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbz78MHqF8iin7H30Vc3tSOXnTI0zXNeFtFsv52IArt-Bmwz1K5Fxl0td0ZgccttFdnptA/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -1017,7 +1017,7 @@
             if (adminPanel.classList.contains('active-tab')) {
                 adminPanel.classList.remove('active-tab');
                 guruPanel.classList.add('active-tab');
-                btn.innerText = "Mod Admin";
+                btn.innerText = "Mod Guru";
                 btn.className = "bg-indigo-600 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-indigo-500 hover:scale-105 transition-transform";
                 document.getElementById('welcomeGuru').innerText = user.name;
                 document.getElementById('guruGroup').innerText = user.activeGroup;
@@ -1073,10 +1073,14 @@
                     divId: "adobe-dc-view"
                 });
 
+                // FIX: Enable FULL_WINDOW on mobile to ensure Annotation Tools appear
+                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
                 adobeDCView.previewFile({
                     content: { promise: pdfPromise },
                     metaData: { fileName: fname }
                 }, {
+                    embedMode: isMobile ? "FULL_WINDOW" : "SIZED_CONTAINER",
                     showAnnotationTools: true,
                     enableFormFilling: true,
                     showDownloadPDF: false,
