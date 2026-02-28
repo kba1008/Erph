@@ -238,7 +238,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/macros/s/AKfycbxhv6quLaGxnvc6iT9R-6Fool3wk90I0QywURKHmwG6p2hj9XzHDaD9sNpUDccZ3JDu6A/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbw2h1nMycq07nwOi5kixC0npDTVDA72EeiqNzB7-aJg3L-Bd0hN26w2CtH5Q-mMaTIF8Q/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -793,8 +793,8 @@
                         iconClass = "text-blue-500";
                         status = "SELESAI";
                     } else {
-                        cardClass = "bg-yellow-50 border-yellow-200 text-yellow-900";
-                        iconClass = "text-yellow-500";
+                        cardClass = "bg-red-50 border-red-200 text-red-900";
+                        iconClass = "text-red-500";
                         status = "PERLU SEMAKAN";
                     }
                 }
@@ -849,8 +849,10 @@
                     stars += `<span class="material-icons text-xl ${color} star-icon" onclick="rateFile('${f.id}', ${i}, '${teacher.teacherName}', '${cleanName}')">star</span>`;
                 }
 
+                let cardBg = currentRating > 0 ? "bg-blue-50 border-blue-200" : "bg-red-50 border-red-200";
+
                 cont.innerHTML += `
-                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <div class="${cardBg} p-4 rounded-xl border shadow-sm">
                     <div class="flex justify-between items-start mb-2">
                         <div class="flex items-center space-x-2">
                             <span class="material-icons text-red-500">picture_as_pdf</span>
