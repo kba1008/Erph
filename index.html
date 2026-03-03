@@ -21,6 +21,7 @@
         .star-icon:hover { color: #fbbf24; transform: scale(1.2); }
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
         .glass-nav { background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .dragging { opacity: 0.5; border: 2px dashed #6366f1; transform: scale(0.95); }
     </style>
 </head>
 <body class="bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900 min-h-screen font-sans selection:bg-pink-500 selection:text-white">
@@ -167,8 +168,8 @@
             </div>
             
             <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Senarai Folder</label>
-            <p class="text-[9px] text-gray-400 mb-2 italic">*Tip: Klik Kanan pada folder untuk Rename/Delete</p>
-            <div id="adminWeekList" class="grid grid-cols-2 gap-3 bg-slate-50/50 p-4 rounded-2xl mb-6 mt-2 border border-slate-200"></div>
+            <p class="text-[9px] text-gray-400 mb-2 italic">*Tip: Drag & Drop untuk susun, Klik Kanan untuk Rename/Delete</p>
+            <div id="adminWeekList" class="grid grid-cols-2 gap-3 bg-slate-50/50 p-4 rounded-2xl mb-6 mt-2 border border-slate-200 min-h-[100px]"></div>
 
             <div id="submissionArea" class="hidden mt-6">
                 <h3 class="font-bold text-slate-800 border-b pb-2 mb-4 flex justify-between items-center">
@@ -255,7 +256,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/macros/s/AKfycbwbOrK454IPSTC9Pd5m8ppmh-UIjOWioPMF5mwWgGNc_rbfAW0aTUZj64wtogP3b8pLyA/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbx_dVK6C2GVzFLD-uPEtoqMnbahTH0odATba8i_zHULTAMtBAYKomGRp5mC5jodZucR8A/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -319,6 +320,9 @@
         // --- DATA ADMIN VARIABLES ---
         let currentAdminData = [];
         let viewingTeacherName = null;
+
+        // --- DRAG AND DROP GLOBALS ---
+        let draggedItem = null;
 
         // --- SESSION RESTORE LOGIC ---
         try {
@@ -633,14 +637,16 @@
                     if(!weeks) return;
                     const cont = document.getElementById('adminWeekList');
                     cont.innerHTML = weeks.length ? "" : "<p class='text-xs text-gray-500 col-span-2'>Sila cipta minggu.</p>";
-                    weeks.forEach(wObj => {
+                    weeks.forEach((wObj, idx) => {
                         let w = typeof wObj === 'string' ? wObj : wObj.name;
                         let status = wObj.status || 'DEFAULT';
                         
                         let colorClass = "bg-yellow-50 text-yellow-900 border-yellow-200";
                         
-                        // CHECK IF MAIN FOLDER FOR LAYOUT
+                        // CHECK IF MAIN FOLDER FOR LAYOUT (Preserve styling for compatibility)
                         let isMain = w === "MAKLUMAT UTAMA";
+                        // ALSO check if it's the very first item AND there are multiple items, treat as header if user wants
+                        // But for now strict to name to prevent confusion.
                         let layoutClass = isMain ? "col-span-2 justify-self-center w-full" : "";
 
                         if(isMain) {
@@ -654,8 +660,16 @@
                         btn.className = `p-3 border rounded-xl font-bold shadow-sm text-sm text-center cursor-pointer hover:shadow-md transition-all ${colorClass} ${layoutClass}`;
                         btn.innerText = w;
                         btn.onclick = () => { fetchAdminDashboard(w); }; 
-                        // ADDED CONTEXT MENU FOR RENAME/DELETE
+                        // CONTEXT MENU
                         btn.oncontextmenu = (e) => { e.preventDefault(); showAdminWeekOptions(w); return false; };
+                        
+                        // DRAG ATTRIBUTES
+                        btn.setAttribute('draggable', 'true');
+                        btn.setAttribute('data-week', w);
+                        btn.ondragstart = (e) => drag(e);
+                        btn.ondrop = (e) => drop(e);
+                        btn.ondragover = (e) => allowDrop(e);
+                        
                         cont.appendChild(btn);
                     });
                 }
@@ -668,6 +682,49 @@
                     if(res) { Swal.fire("Info", res.message, res.status === 'success' ? "success" : "info"); if(res.status === 'success') doAction('getWeeksAdmin'); }
                 }
             } catch (error) { showLoading(false); }
+        }
+
+        // --- DRAG AND DROP FUNCTIONS ---
+        function drag(ev) {
+            draggedItem = ev.target;
+            ev.dataTransfer.effectAllowed = 'move';
+            ev.target.classList.add('dragging');
+        }
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            draggedItem.classList.remove('dragging');
+            
+            if (draggedItem && draggedItem !== ev.target) {
+                // Find closest draggable target (in case dropped on child text)
+                let target = ev.target.closest('[draggable="true"]');
+                if (target && target !== draggedItem) {
+                    // Reorder DOM
+                    const container = document.getElementById('adminWeekList');
+                    const children = Array.from(container.children);
+                    const idxA = children.indexOf(draggedItem);
+                    const idxB = children.indexOf(target);
+                    
+                    if(idxA < idxB) {
+                        target.after(draggedItem);
+                    } else {
+                        target.before(draggedItem);
+                    }
+                    
+                    // Save Order
+                    const newOrder = Array.from(container.children).map(c => c.getAttribute('data-week'));
+                    
+                    // Call API without blocking UI too much, just small toast
+                    const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+                    Toast.fire({ icon: 'info', title: 'Menyimpan susunan...' });
+                    
+                    runAPI('reorderWeeks', { group: user.activeGroup, order: newOrder });
+                }
+            }
         }
 
         function showGroupSelection() {
