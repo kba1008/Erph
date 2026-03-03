@@ -263,7 +263,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/a/macros/moe-dl.edu.my/s/AKfycbyhQs4X1IZvFlirj7Jgs_6OzLgW7iI28--7NF3MwbbHTgMD5LHlLvgdpT7YcahHMvgMTQ/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbzIjXiZwodFHUPrR6fj1cT6dJD63fzB0Q9sdHryshPrm-0Aqrz8RXo57b8opEsZCwfUdA/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -430,7 +430,7 @@
                           document.getElementById('changePassBtn').classList.remove('hidden');
                           showGroupSelection();
                      } else {
-                         Swal.fire("Akses Ditolak", res.message || "Emel Google ini tiada dalam rekod.", "error");
+                         Swal.fire("Akses Ditolak", res ? res.message : "Sila cuba lagi.", "error");
                      }
                 });
             } catch (e) {
@@ -507,14 +507,36 @@
 
         async function runAPI(actionName, payloadData) {
             try {
+                // DEBUG: Pastikan URL wujud
+                if (!API_URL) throw new Error("API URL tidak dijumpai/kosong.");
+
                 const res = await fetch(API_URL, {
                     method: 'POST',
                     body: JSON.stringify({ action: actionName, data: payloadData }),
+                    // PENTING: Gunakan text/plain untuk elak 'CORS Preflight' yang ketat dari Google
                     headers: { "Content-Type": "text/plain;charset=utf-8" },
                     redirect: 'follow'
                 });
-                return await res.json();
-            } catch (err) { Swal.fire("Ralat Rangkaian", "Sila semak internet anda.", "error"); return null; }
+                
+                if(!res.ok) throw new Error(`Server Error: ${res.status} ${res.statusText}`);
+                
+                // Cuba parse text dahulu untuk elak JSON parse error senyap
+                const text = await res.text();
+                try {
+                    return JSON.parse(text);
+                } catch(e) {
+                    throw new Error("Respon pelayan bukan JSON: " + text.substring(0, 50) + "...");
+                }
+
+            } catch (err) { 
+                console.error("DEBUG RALAT:", err);
+                Swal.fire({
+                    title: "Masalah Sambungan",
+                    html: `<div class="text-left text-xs"><p class="mb-2 font-bold">Butiran Ralat:</p><code class="block bg-red-50 p-2 rounded border border-red-100 text-red-600 font-mono break-all">${err.message}</code><p class="mt-2 text-gray-500">Sila screenshot ini dan hantar kepada Admin jika berlarutan.</p></div>`,
+                    icon: "error"
+                }); 
+                return null; 
+            }
         }
 
         async function doAction(action) {
@@ -1293,10 +1315,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
