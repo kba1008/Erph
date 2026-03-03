@@ -114,7 +114,7 @@
                 <input type="text" id="regName" placeholder="Nama Penuh" class="w-full border-2 border-gray-100 p-4 rounded-xl bg-gray-50 focus:border-indigo-500 outline-none font-bold">
                 <input type="text" id="regIC" placeholder="No. Kad Pengenalan (Tanpa -)" class="w-full border-2 border-gray-100 p-4 rounded-xl bg-gray-50 focus:border-indigo-500 outline-none font-bold">
                 <input type="password" id="regPass" placeholder="Cipta Kata Laluan" class="w-full border-2 border-gray-100 p-4 rounded-xl bg-gray-50 focus:border-indigo-500 outline-none font-bold">
-                <button onclick="doAction('signup')" class="w-full bg-slate-800 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all shadow-lg">HANTAR PENDAFTARAN</button>
+                <button type="button" onclick="doAction('signup')" class="w-full bg-slate-800 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all shadow-lg">HANTAR PENDAFTARAN</button>
             </div>
         </div>
 
@@ -263,7 +263,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/a/macros/moe-dl.edu.my/s/AKfycbw-WVmd0sq8iV1LXeJq8DGmKullQSFP4_H3BgqcxixbEi95ccA2-DatI-4hMJtmJaL21w/exec",
+            API_URL: "https://script.google.com/a/macros/moe-dl.edu.my/s/AKfycbwcaKVeEmd1nyn0NXnCPfuNEAQkj5CrRQ3xmLcmMKVKzx0cfc3dolmgWpWHROvgvG6-/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -589,7 +589,15 @@
                     if(!d.name || !d.ic || !d.pass) return Swal.fire("Ralat", "Lengkapkan maklumat.", "warning");
                     showLoading(true, "MENDAFTAR...");
                     const res = await runAPI('signup', d);
-                    showLoading(false); if(res) { Swal.fire("Info", res, "success").then(() => toggleAuth('login')); }
+                    showLoading(false); 
+                    if(res) { 
+                        // Handle object response
+                        if (res.status === 'success') {
+                            Swal.fire("Berjaya", res.message, "success").then(() => toggleAuth('login'));
+                        } else {
+                            Swal.fire("Ralat", res.message || res, "error");
+                        }
+                    }
                 }
                 else if (action === 'getWeeksGuru') {
                     // PASS role and userName for coloring logic
@@ -1315,4 +1323,3 @@
     </script>
 </body>
 </html>
-
