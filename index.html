@@ -141,16 +141,15 @@
             <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">1. Pilih Minggu</label>
             <div id="weekList" class="grid grid-cols-2 gap-3 mb-6 mt-2 p-3 bg-slate-50/50 rounded-2xl border border-slate-200"></div>
             
-            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">2. Muat Naik Fail RPH</label>
+            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">2. Muat Naik Fail</label>
             <div class="relative mt-2 mb-4">
-                <!-- ADDED MULTIPLE ATTRIBUTE HERE -->
                 <input type="file" id="fileInp" multiple class="w-full p-4 border-2 border-dashed border-indigo-300 rounded-2xl bg-indigo-50/30 text-sm font-bold text-indigo-900 focus:bg-white transition-all">
                 <div class="absolute top-0 right-0 p-4 pointer-events-none">
                     <span class="material-icons text-indigo-300">cloud_upload</span>
                 </div>
             </div>
             <input type="hidden" id="selectedWeek">
-            <button onclick="uploadRPH()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-2xl font-black shadow-lg hover:shadow-indigo-500/50 hover:scale-[1.02] transition-all">HANTAR RPH</button>
+            <button onclick="uploadRPH()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-2xl font-black shadow-lg hover:shadow-indigo-500/50 hover:scale-[1.02] transition-all">HANTAR FAIL</button>
 
             <div id="teacherFilesArea" class="mt-8 pt-6 border-t border-slate-200 hidden">
                 <div class="flex justify-between items-center mb-4">
@@ -167,7 +166,7 @@
                 <button onclick="doAction('createWeek')" class="bg-indigo-600 text-white p-2 px-4 rounded-xl flex items-center shadow-lg hover:bg-indigo-500 font-bold text-xs"><span class="material-icons text-sm mr-1">add</span> Minggu</button>
             </div>
             
-            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Senarai Folder Minggu</label>
+            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Senarai Folder</label>
             <p class="text-[9px] text-gray-400 mb-2 italic">*Tip: Klik Kanan pada folder untuk Rename/Delete</p>
             <div id="adminWeekList" class="grid grid-cols-2 gap-3 bg-slate-50/50 p-4 rounded-2xl mb-6 mt-2 border border-slate-200"></div>
 
@@ -256,7 +255,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/macros/s/AKfycbzwLJ6JnmEOynIBkNtft7foapONZMTlkp5UxkSRYDO1wisnKI_ahpFauMchVO2Aufa9Tw/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbxzLGK-G5yz9neeNmVnuxgNgRvTJafE3P6GzyinjZ5cSc4aBahGryljR9alSXMG5B9NAA/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -607,10 +606,15 @@
                         let status = wObj.status || 'DEFAULT';
                         let colorClass = "bg-white text-gray-700 border-gray-200 hover:shadow-md transition-all"; // Default
 
-                        // GURU LOGIC COLORS
-                        if(status === 'RED') colorClass = "bg-red-50 text-red-900 border-red-200 shadow-sm"; // Belum hantar
-                        else if(status === 'YELLOW') colorClass = "bg-yellow-50 text-yellow-900 border-yellow-200 shadow-sm"; // Pending Sah
-                        else if(status === 'BLUE') colorClass = "bg-blue-50 text-blue-900 border-blue-200 shadow-sm"; // Semua Sah
+                        // SPECIAL COLOR FOR MAKLUMAT UTAMA
+                        if(w === "MAKLUMAT UTAMA") {
+                            colorClass = "bg-purple-100 text-purple-900 border-purple-300 ring-2 ring-purple-200 shadow-lg";
+                        } else {
+                            // GURU LOGIC COLORS FOR NORMAL WEEKS
+                            if(status === 'RED') colorClass = "bg-red-50 text-red-900 border-red-200 shadow-sm"; // Belum hantar
+                            else if(status === 'YELLOW') colorClass = "bg-yellow-50 text-yellow-900 border-yellow-200 shadow-sm"; // Pending Sah
+                            else if(status === 'BLUE') colorClass = "bg-blue-50 text-blue-900 border-blue-200 shadow-sm"; // Semua Sah
+                        }
 
                         const btn = document.createElement('div');
                         btn.className = `p-4 border-2 rounded-xl text-center text-sm font-bold cursor-pointer card-week ${colorClass}`;
@@ -629,15 +633,14 @@
                         let w = typeof wObj === 'string' ? wObj : wObj.name;
                         let status = wObj.status || 'DEFAULT';
                         
-                        // LOGIK WARNA ADMIN BARU:
-                        // 1. KUNING: Tiada submission (DEFAULT)
-                        // 2. MERAH: Ada submission tapi belum semak semua (RED)
-                        // 3. BIRU: Semua submission sudah disemak (YELLOW dari server)
-                        
-                        let colorClass = "bg-yellow-50 text-yellow-900 border-yellow-200"; 
+                        let colorClass = "bg-yellow-50 text-yellow-900 border-yellow-200";
 
-                        if(status === 'RED') colorClass = "bg-red-50 text-red-900 border-red-200"; // Ada belum sah
-                        else if(status === 'YELLOW') colorClass = "bg-blue-50 text-blue-900 border-blue-200"; // Semua sah
+                        if(w === "MAKLUMAT UTAMA") {
+                            colorClass = "bg-purple-100 text-purple-900 border-purple-300 ring-2 ring-purple-200 shadow-md";
+                        } else {
+                            if(status === 'RED') colorClass = "bg-red-50 text-red-900 border-red-200"; // Ada belum sah
+                            else if(status === 'YELLOW') colorClass = "bg-blue-50 text-blue-900 border-blue-200"; // Semua sah
+                        }
 
                         const btn = document.createElement('div');
                         btn.className = `p-3 border rounded-xl font-bold shadow-sm text-sm text-center cursor-pointer hover:shadow-md transition-all ${colorClass}`;
@@ -814,7 +817,7 @@
             // Update Cumulative Score Display
             document.getElementById('myWeeklyStars').innerText = res.cumulativeScore || 0;
 
-            if(res.files.length === 0) return cont.innerHTML = `<p class='text-xs text-gray-500 italic'>Belum ada RPH dihantar.</p>`;
+            if(res.files.length === 0) return cont.innerHTML = `<p class='text-xs text-gray-500 italic'>Belum ada fail dihantar.</p>`;
 
             cont.innerHTML = "";
             res.files.forEach(f => {
@@ -839,7 +842,7 @@
                             <div class="mt-1 flex items-center">${statusBadge}</div>
                         </div>
                         <div class="flex space-x-1">
-                           <button onclick="window.open('${f.url}', '_blank')" class="bg-indigo-50 text-indigo-700 p-2 rounded-lg hover:bg-indigo-100" title="Lihat PDF"><span class="material-icons text-sm">visibility</span></button>
+                           <button onclick="window.open('${f.url}', '_blank')" class="bg-indigo-50 text-indigo-700 p-2 rounded-lg hover:bg-indigo-100" title="Lihat Fail"><span class="material-icons text-sm">visibility</span></button>
                            <button onclick="openPDFForGrading('${f.id}', '${cleanName}')" class="bg-pink-50 text-pink-700 p-2 rounded-lg hover:bg-pink-100 border border-pink-100" title="Edit/Annotate">
                               <span class="material-icons text-sm">edit</span>
                            </button>
@@ -957,7 +960,7 @@
             viewingTeacherName = teacher.teacherName;
             document.getElementById('adminTeacherGrid').classList.add('hidden');
             document.getElementById('adminTeacherFileView').classList.remove('hidden');
-            document.getElementById('adminBreadcrumb').innerText = "RPH: " + teacher.teacherName;
+            document.getElementById('adminBreadcrumb').innerText = "FAIL: " + teacher.teacherName;
 
             const cont = document.getElementById('adminFilesContainer');
             cont.innerHTML = "";
@@ -1330,9 +1333,12 @@
 
         // --- NEW ADMIN WEEK MENU FUNCTIONS ---
         function showAdminWeekOptions(weekName) {
+            // PREVENT DELETION FOR 'MAKLUMAT UTAMA'
+            const isProtected = weekName === "MAKLUMAT UTAMA";
+            
             Swal.fire({
                 title: 'Pilihan Folder: ' + weekName,
-                showDenyButton: true,
+                showDenyButton: !isProtected, // HIDE DELETE BUTTON IF PROTECTED
                 showCancelButton: true,
                 confirmButtonText: '<span class="material-icons">edit</span> RENAME',
                 denyButtonText: '<span class="material-icons">delete</span> DELETE',
@@ -1342,7 +1348,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     renameWeekPrompt(weekName);
-                } else if (result.isDenied) {
+                } else if (result.isDenied && !isProtected) {
                     deleteWeekPrompt(weekName);
                 }
             });
@@ -1394,7 +1400,7 @@
         // --- NEW TEACHER FILE FUNCTIONS ---
         async function deleteRPH(fileId, fileName) {
              const r = await Swal.fire({
-                title: 'Padam RPH?',
+                title: 'Padam Fail?',
                 text: "Fail '"+fileName+"' akan dipadam dari Google Drive.",
                 icon: 'warning',
                 showCancelButton: true,
@@ -1420,7 +1426,7 @@
              const { value: text } = await Swal.fire({
                  title: 'Refleksi Guru',
                  input: 'textarea',
-                 inputLabel: 'Tulis refleksi anda untuk RPH ini:',
+                 inputLabel: 'Tulis refleksi anda untuk fail ini:',
                  inputValue: currentRef,
                  showCancelButton: true
              });
