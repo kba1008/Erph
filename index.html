@@ -45,19 +45,31 @@
         <div id="adobe-dc-view" class="flex-1 w-full bg-gray-100"></div>
     </div>
 
-    <nav class="glass-nav text-white p-4 sticky top-0 z-50 shadow-2xl">
+    <nav class="glass-nav text-white p-2 md:p-4 sticky top-0 z-50 shadow-2xl">
         <div class="container mx-auto flex justify-between items-center max-w-2xl">
             <div class="flex items-center space-x-2">
-                <div class="bg-gradient-to-br from-pink-500 to-orange-400 p-2 rounded-lg shadow-lg">
-                    <span class="material-icons text-white">cloud_done</span>
+                <div class="bg-gradient-to-br from-pink-500 to-orange-400 p-1.5 md:p-2 rounded-lg shadow-lg">
+                    <span class="material-icons text-white text-sm md:text-base">cloud_done</span>
                 </div>
-                <span class="font-black uppercase tracking-widest text-lg text-transparent bg-clip-text bg-gradient-to-r from-pink-200 to-indigo-200 drop-shadow-sm">eRPH Cloud</span>
+                <span class="font-black uppercase tracking-widest text-sm md:text-lg text-transparent bg-clip-text bg-gradient-to-r from-pink-200 to-indigo-200 drop-shadow-sm truncate max-w-[130px] md:max-w-none">SK SELAMA (K)</span>
             </div>
-            <div class="flex space-x-2">
-                <button id="groupBtn" onclick="showGroupSelection()" class="hidden bg-indigo-600/80 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-indigo-500 hover:scale-105 transition-transform">Kumpulan</button>
-                <button id="switchRoleBtn" onclick="switchRoleView()" class="hidden bg-green-500/80 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-green-600 hover:scale-105 transition-transform">Mod Guru</button>
-                <button id="changePassBtn" onclick="changeOwnPassword()" class="hidden bg-yellow-500/80 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-yellow-400 hover:scale-105 transition-transform">Pass</button>
-                <button id="logoutBtn" onclick="doLogout()" class="hidden bg-red-500/80 px-4 py-2 rounded-full text-xs font-bold shadow-lg hover:bg-red-600 hover:scale-105 transition-transform">Keluar</button>
+            <div class="flex items-center gap-1 md:gap-2">
+                <button id="groupBtn" onclick="showGroupSelection()" class="hidden bg-indigo-600/80 p-2 md:px-3 md:py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-indigo-500 hover:scale-105 transition-transform flex items-center justify-center" title="Kumpulan">
+                    <span class="material-icons text-[16px] md:text-lg">groups</span>
+                    <span class="hidden md:inline ml-1">Kumpulan</span>
+                </button>
+                <button id="switchRoleBtn" onclick="switchRoleView()" class="hidden bg-green-500/80 p-2 md:px-3 md:py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-green-600 hover:scale-105 transition-transform flex items-center justify-center" title="Tukar Mod">
+                    <span class="material-icons text-[16px] md:text-lg">school</span>
+                    <span class="hidden md:inline ml-1">Mod Guru</span>
+                </button>
+                <button id="changePassBtn" onclick="changeOwnPassword()" class="hidden bg-yellow-500/80 p-2 md:px-3 md:py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-yellow-400 hover:scale-105 transition-transform flex items-center justify-center" title="Tukar Password">
+                    <span class="material-icons text-[16px] md:text-lg">vpn_key</span>
+                    <span class="hidden md:inline ml-1">Pass</span>
+                </button>
+                <button id="logoutBtn" onclick="doLogout()" class="hidden bg-red-500/80 p-2 md:px-4 md:py-2 rounded-full text-xs font-bold shadow-lg hover:bg-red-600 hover:scale-105 transition-transform flex items-center justify-center" title="Keluar">
+                    <span class="material-icons text-[16px] md:text-lg">logout</span>
+                    <span class="hidden md:inline ml-1">Keluar</span>
+                </button>
             </div>
         </div>
     </nav>
@@ -104,9 +116,9 @@
             </div>
 
             <div id="divSignup" class="hidden space-y-4">
-                <input type="text" id="regName" placeholder="Nama Penuh" class="w-full border-2 border-gray-100 p-4 rounded-xl bg-gray-50 focus:border-indigo-500 outline-none font-bold">
-                <input type="text" id="regIC" placeholder="No. Kad Pengenalan (Tanpa -)" class="w-full border-2 border-gray-100 p-4 rounded-xl bg-gray-50 focus:border-indigo-500 outline-none font-bold">
-                <input type="password" id="regPass" placeholder="Cipta Kata Laluan" class="w-full border-2 border-gray-100 p-4 rounded-xl bg-gray-50 focus:border-indigo-500 outline-none font-bold">
+                <input type="text" id="regName" placeholder="NAMA PENUH" class="w-full border-2 border-gray-100 p-4 rounded-xl bg-gray-50 focus:border-indigo-500 outline-none font-bold">
+                <input type="text" id="regIC" placeholder="EMEL DELIMA " class="w-full border-2 border-gray-100 p-4 rounded-xl bg-gray-50 focus:border-indigo-500 outline-none font-bold">
+                <input type="password" id="regPass" placeholder="CIPTA KATA LALUAN" class="w-full border-2 border-gray-100 p-4 rounded-xl bg-gray-50 focus:border-indigo-500 outline-none font-bold">
                 <button type="button" onclick="doAction('signup')" class="w-full bg-slate-800 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all shadow-lg">HANTAR PENDAFTARAN</button>
             </div>
         </div>
@@ -256,7 +268,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/macros/s/AKfycbx_dVK6C2GVzFLD-uPEtoqMnbahTH0odATba8i_zHULTAMtBAYKomGRp5mC5jodZucR8A/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbzV78rplxeiLbd80oM3rJ7dywoA6j-jHLQQy7FM7TenxdtwozVEkhCiv99rwv8gORvVzQ/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -1289,16 +1301,22 @@
             if (adminPanel.classList.contains('active-tab')) {
                 adminPanel.classList.remove('active-tab');
                 guruPanel.classList.add('active-tab');
-                btn.innerText = "Mod Admin";
-                btn.className = "bg-indigo-600 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-indigo-500 hover:scale-105 transition-transform";
+                
+                // Set button to indicate possibility to switch to Admin
+                btn.innerHTML = '<span class="material-icons text-[16px] md:text-lg">admin_panel_settings</span><span class="hidden md:inline ml-1">Mod Admin</span>';
+                btn.className = "bg-indigo-600 p-2 md:px-3 md:py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-indigo-500 hover:scale-105 transition-transform flex items-center";
+                
                 document.getElementById('welcomeGuru').innerText = user.name;
                 document.getElementById('guruGroup').innerText = user.activeGroup;
                 doAction('getWeeksGuru');
             } else {
                 guruPanel.classList.remove('active-tab');
                 adminPanel.classList.add('active-tab');
-                btn.innerText = "Mod Guru";
-                btn.className = "bg-green-500 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-green-600 hover:scale-105 transition-transform";
+                
+                // Set button to indicate possibility to switch to Guru
+                btn.innerHTML = '<span class="material-icons text-[16px] md:text-lg">school</span><span class="hidden md:inline ml-1">Mod Guru</span>';
+                btn.className = "bg-green-500 p-2 md:px-3 md:py-2 rounded-full text-xs font-bold text-white shadow-lg hover:bg-green-600 hover:scale-105 transition-transform flex items-center";
+                
                 doAction('getWeeksAdmin');
             }
         }
