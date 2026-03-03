@@ -168,6 +168,7 @@
             </div>
             
             <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Senarai Folder Minggu</label>
+            <p class="text-[9px] text-gray-400 mb-2 italic">*Tip: Klik Kanan pada folder untuk Rename/Delete</p>
             <div id="adminWeekList" class="grid grid-cols-2 gap-3 bg-slate-50/50 p-4 rounded-2xl mb-6 mt-2 border border-slate-200"></div>
 
             <div id="submissionArea" class="hidden mt-6">
@@ -255,7 +256,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/macros/s/AKfycbwHdaSIy9sZUx1_9ccPy7z01_j4OQ4LAljeVsNR5RsvzTGeINPTnl3VeTth7ThfeE4VUw/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbzwLJ6JnmEOynIBkNtft7foapONZMTlkp5UxkSRYDO1wisnKI_ahpFauMchVO2Aufa9Tw/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -291,10 +292,10 @@
                 throw new Error("SYSTEM_HALTED: LICENSE_EXPIRED");
             }
 
-            // 2. Anti-Right Click
-            if (SECURE_CORE.SECURITY.DISABLE_RIGHT_CLICK) {
-                document.addEventListener('contextmenu', e => e.preventDefault());
-            }
+            // 2. Anti-Right Click (DISABLED FOR THIS UPDATE TO ALLOW CONTEXT MENU)
+            // if (SECURE_CORE.SECURITY.DISABLE_RIGHT_CLICK) {
+            //    document.addEventListener('contextmenu', e => e.preventDefault());
+            // }
 
             // 3. Anti-DevTools Keys
             if (SECURE_CORE.SECURITY.DISABLE_DEV_TOOLS) {
@@ -642,6 +643,8 @@
                         btn.className = `p-3 border rounded-xl font-bold shadow-sm text-sm text-center cursor-pointer hover:shadow-md transition-all ${colorClass}`;
                         btn.innerText = w;
                         btn.onclick = () => { fetchAdminDashboard(w); }; 
+                        // ADDED CONTEXT MENU FOR RENAME/DELETE
+                        btn.oncontextmenu = (e) => { e.preventDefault(); showAdminWeekOptions(w); return false; };
                         cont.appendChild(btn);
                     });
                 }
@@ -818,13 +821,14 @@
                 let r = f.rating || 0;
                 let aiBadge = f.aiRating ? `<span class="ml-2 bg-purple-100 text-purple-700 text-[9px] font-bold px-1 rounded border border-purple-200">AI: ${f.aiRating}★</span>` : "";
                 let comment = f.comment ? `<div class='text-[10px] text-gray-500 italic mt-1 bg-yellow-50 p-2 rounded-lg border border-yellow-100 flex justify-between items-start'><span>"${f.comment}"</span>${aiBadge}</div>` : "";
+                let reflection = f.reflection ? `<div class='text-[10px] text-indigo-700 italic mt-1 bg-indigo-50 p-2 rounded-lg border border-indigo-100'><span class="font-bold">Refleksi:</span> ${f.reflection}</div>` : "";
                 let starHtml = "";
                 for(let i=1; i<=5; i++) { starHtml += i <= r ? "<span class='text-yellow-500'>★</span>" : "<span class='text-gray-200'>★</span>"; }
                 
                 let statusBadge = r > 0 ? `<span class="bg-green-500 text-white text-[9px] px-2 py-0.5 rounded ml-2 font-bold">DISEMAK (${r}★)</span>` : `<span class="bg-yellow-400 text-yellow-900 text-[9px] px-2 py-0.5 rounded ml-2 shadow-sm font-bold">MENUNGGU SEMAKAN</span>`;
                 let cleanName = f.name.replace(`[${user.name}] `, '');
 
-                // VERIFIER TEXT - UPDATED WITH ICON FOR VISIBILITY
+                // VERIFIER TEXT
                 let verifierText = f.verifier ? `<div class="mt-2 pt-2 border-t border-gray-50 flex justify-end items-center"><span class="material-icons text-[10px] text-green-500 mr-1">verified</span><p class="text-[9px] text-gray-500 italic uppercase tracking-wider">Disahkan oleh: <span class="text-indigo-600 font-bold">${f.verifier}</span></p></div>` : "";
 
                 cont.innerHTML += `
@@ -835,15 +839,21 @@
                             <div class="mt-1 flex items-center">${statusBadge}</div>
                         </div>
                         <div class="flex space-x-1">
-                           <button onclick="window.open('${f.url}', '_blank')" class="ml-2 bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-indigo-100">LIHAT</button>
-                           <!-- EDIT ICON CHANGED HERE -->
-                           <button onclick="openPDFForGrading('${f.id}', '${cleanName}')" class="bg-pink-50 text-pink-700 px-3 py-2 rounded-lg hover:bg-pink-100 border border-pink-100" title="Edit/Annotate">
+                           <button onclick="window.open('${f.url}', '_blank')" class="bg-indigo-50 text-indigo-700 p-2 rounded-lg hover:bg-indigo-100" title="Lihat PDF"><span class="material-icons text-sm">visibility</span></button>
+                           <button onclick="openPDFForGrading('${f.id}', '${cleanName}')" class="bg-pink-50 text-pink-700 p-2 rounded-lg hover:bg-pink-100 border border-pink-100" title="Edit/Annotate">
                               <span class="material-icons text-sm">edit</span>
+                           </button>
+                           <button onclick="saveRefleksi('${f.id}', '${f.reflection||''}')" class="bg-green-50 text-green-700 p-2 rounded-lg hover:bg-green-100 border border-green-100" title="Tulis Refleksi">
+                              <span class="material-icons text-sm">edit_note</span>
+                           </button>
+                           <button onclick="deleteRPH('${f.id}', '${cleanName}')" class="bg-red-50 text-red-700 p-2 rounded-lg hover:bg-red-100 border border-red-100" title="Padam">
+                              <span class="material-icons text-sm">delete</span>
                            </button>
                         </div>
                     </div>
                     <div class="mt-2">${starHtml}</div>
                     ${comment}
+                    ${reflection}
                     ${verifierText}
                 </div>`;
             });
@@ -989,6 +999,7 @@
                         </button>
                     </div>
                     ${f.comment ? `<div class="mt-2 text-xs text-slate-600 italic bg-yellow-50 p-2 rounded border border-yellow-100 relative"><span class="material-icons text-[10px] text-yellow-500 absolute -top-1 -left-1 bg-white rounded-full">format_quote</span>${f.comment}${aiBadge}</div>` : ''}
+                    ${f.reflection ? `<div class="mt-2 text-xs text-indigo-700 italic bg-indigo-50 p-2 rounded border border-indigo-100"><span class="font-bold">Refleksi:</span> ${f.reflection}</div>` : ''}
                 </div>`;
             });
         }
@@ -1315,6 +1326,115 @@
                     closePDF();
                 });
             }
+        }
+
+        // --- NEW ADMIN WEEK MENU FUNCTIONS ---
+        function showAdminWeekOptions(weekName) {
+            Swal.fire({
+                title: 'Pilihan Folder: ' + weekName,
+                showDenyButton: true,
+                showCancelButton: true,
+                confirmButtonText: '<span class="material-icons">edit</span> RENAME',
+                denyButtonText: '<span class="material-icons">delete</span> DELETE',
+                cancelButtonText: 'BATAL',
+                confirmButtonColor: '#4f46e5',
+                denyButtonColor: '#d33'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    renameWeekPrompt(weekName);
+                } else if (result.isDenied) {
+                    deleteWeekPrompt(weekName);
+                }
+            });
+        }
+
+        async function renameWeekPrompt(weekName) {
+            const { value: newName } = await Swal.fire({
+                title: 'Namakan Semula Folder',
+                text: "Masukkan nama baharu:",
+                input: 'text',
+                inputValue: weekName,
+                showCancelButton: true
+            });
+            if (newName && newName !== weekName) {
+                showLoading(true, "RENAME FOLDER & DRIVE...");
+                const res = await runAPI('renameWeek', { oldName: weekName, newName: newName, group: user.activeGroup });
+                showLoading(false);
+                if(res && res.status==='success') {
+                     Swal.fire("Berjaya", res.message, "success");
+                     doAction('getWeeksAdmin');
+                } else {
+                     Swal.fire("Gagal", res?res.message:'Ralat', "error");
+                }
+            }
+        }
+
+        async function deleteWeekPrompt(weekName) {
+            const r = await Swal.fire({
+                title: 'AMARAN PADAM FOLDER!',
+                html: "Anda pasti mahu memadam folder <b>"+weekName+"</b> dari Google Drive?<br>Semua data berkaitan akan hilang dari sistem ini.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'YA, PADAM TERUS!'
+            });
+            if(r.isConfirmed) {
+                showLoading(true, "MEMADAM FOLDER DRIVE...");
+                const res = await runAPI('deleteWeek', { weekName: weekName, group: user.activeGroup });
+                showLoading(false);
+                if(res && res.status==='success') {
+                     Swal.fire("Berjaya", res.message, "success");
+                     doAction('getWeeksAdmin');
+                } else {
+                     Swal.fire("Gagal", res?res.message:'Ralat', "error");
+                }
+            }
+        }
+
+        // --- NEW TEACHER FILE FUNCTIONS ---
+        async function deleteRPH(fileId, fileName) {
+             const r = await Swal.fire({
+                title: 'Padam RPH?',
+                text: "Fail '"+fileName+"' akan dipadam dari Google Drive.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Ya, Padam'
+             });
+             if(r.isConfirmed) {
+                 showLoading(true, "MEMADAM FAIL...");
+                 const wk = document.getElementById('lblTeacherWeek').innerText;
+                 const res = await runAPI('deleteFile', { fileId: fileId, group: user.activeGroup, week: wk });
+                 showLoading(false);
+                 if(res && res.status==='success') {
+                     Swal.fire("Berjaya", res.message, "success");
+                     fetchTeacherFiles(wk);
+                     doAction('getWeeksGuru');
+                 } else {
+                     Swal.fire("Gagal", res?res.message:'Ralat', "error");
+                 }
+             }
+        }
+
+        async function saveRefleksi(fileId, currentRef) {
+             const { value: text } = await Swal.fire({
+                 title: 'Refleksi Guru',
+                 input: 'textarea',
+                 inputLabel: 'Tulis refleksi anda untuk RPH ini:',
+                 inputValue: currentRef,
+                 showCancelButton: true
+             });
+             if(text !== undefined && text !== null) {
+                 showLoading(true, "MENYIMPAN REFLEKSI...");
+                 const res = await runAPI('saveReflection', { fileId: fileId, reflection: text });
+                 showLoading(false);
+                 if(res && res.status==='success') {
+                     Swal.fire("Berjaya", "Refleksi disimpan!", "success");
+                     fetchTeacherFiles(document.getElementById('lblTeacherWeek').innerText);
+                 } else {
+                     Swal.fire("Gagal", res?res.message:'Ralat', "error");
+                 }
+             }
         }
     </script>
 </body>
