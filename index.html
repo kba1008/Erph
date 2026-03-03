@@ -71,20 +71,12 @@
                 <button onclick="toggleAuth('login')" id="btnTabLogin" class="font-bold text-indigo-900 border-b-4 border-indigo-600 pb-2 transition-all">LOG MASUK</button>
                 <button onclick="toggleAuth('signup')" id="btnTabSignup" class="font-bold text-gray-400 pb-2 hover:text-indigo-500 transition-all">DAFTAR</button>
             </div>
+            
+            <!-- CLEANED LOGIN SECTION -->
             <div id="divLogin">
-                <input type="text" id="loginIC" placeholder="No. Kad Pengenalan" class="w-full border-2 border-gray-100 p-4 rounded-xl mb-4 bg-gray-50 focus:bg-white focus:border-indigo-500 outline-none transition-all shadow-inner font-bold text-gray-700">
-                <input type="password" id="loginPass" placeholder="Kata Laluan" class="w-full border-2 border-gray-100 p-4 rounded-xl mb-3 bg-gray-50 focus:bg-white focus:border-indigo-500 outline-none transition-all shadow-inner font-bold text-gray-700">
-                
-                <!-- LOCK ICON TOGGLE -->
-                <div class="flex items-center mb-6 justify-end cursor-pointer transition-colors select-none" onclick="toggleRemember()">
-                    <div id="lockContainer" class="flex items-center text-gray-400 hover:text-indigo-600 bg-gray-100 px-3 py-1 rounded-full">
-                         <span id="lockIcon" class="material-icons text-sm mr-1">lock_open</span>
-                         <span id="lockText" class="text-[10px] font-bold uppercase tracking-wider">KUNCI MAKLUMAT</span>
-                    </div>
-                    <input type="checkbox" id="chkRemember" class="hidden">
+                <div class="text-center mb-6 px-4">
+                     <p class="text-gray-400 text-xs font-medium">Sila gunakan akaun Google (Delima/Gmail) untuk log masuk.</p>
                 </div>
-
-                <button onclick="doAction('login')" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-2xl font-black shadow-lg hover:shadow-indigo-500/50 hover:scale-[1.02] transition-all tracking-wider text-sm">MASUK SISTEM</button>
                 
                 <!-- GOOGLE SIGN-IN CONFIGURATION (PASTIKAN CLIENT ID ANDA BETUL) -->
                 <div id="g_id_onload"
@@ -94,25 +86,25 @@
                      data-callback="handleCredentialResponse"
                      data-auto_prompt="false">
                 </div>
-                <div class="g_id_signin my-3"
-                     data-type="standard"
-                     data-shape="rectangular"
-                     data-theme="outline"
-                     data-text="signin_with"
-                     data-size="large"
-                     data-logo_alignment="left"
-                     data-width="100%">
-                </div>
                 
-                <button onclick="googleLoginMsg()" class="w-full mt-2 text-[10px] text-gray-400 uppercase tracking-widest font-bold hover:text-indigo-500 flex justify-center items-center">
-                    <span class="material-icons text-sm mr-1">help_outline</span> Masalah Google Login?
-                </button>
+                <div class="flex justify-center my-6">
+                    <div class="g_id_signin"
+                         data-type="standard"
+                         data-shape="pill"
+                         data-theme="filled_blue"
+                         data-text="signin_with"
+                         data-size="large"
+                         data-logo_alignment="left"
+                         data-width="280">
+                    </div>
+                </div>
 
-                <button onclick="accessMaster()" class="w-full mt-6 text-[10px] text-gray-400 uppercase tracking-widest font-bold hover:text-indigo-500">Akses Master Admin</button>
+                <button onclick="accessMaster()" class="w-full mt-10 text-[10px] text-gray-300 uppercase tracking-widest font-bold hover:text-indigo-500">Akses Master Admin</button>
             </div>
+
             <div id="divSignup" class="hidden space-y-4">
                 <input type="text" id="regName" placeholder="Nama Penuh" class="w-full border-2 border-gray-100 p-4 rounded-xl bg-gray-50 focus:border-indigo-500 outline-none font-bold">
-                <input type="text" id="regIC" placeholder="guna emel @moe-dl.edu.my " class="w-full border-2 border-gray-100 p-4 rounded-xl bg-gray-50 focus:border-indigo-500 outline-none font-bold">
+                <input type="text" id="regIC" placeholder="No. Kad Pengenalan (Tanpa -)" class="w-full border-2 border-gray-100 p-4 rounded-xl bg-gray-50 focus:border-indigo-500 outline-none font-bold">
                 <input type="password" id="regPass" placeholder="Cipta Kata Laluan" class="w-full border-2 border-gray-100 p-4 rounded-xl bg-gray-50 focus:border-indigo-500 outline-none font-bold">
                 <button type="button" onclick="doAction('signup')" class="w-full bg-slate-800 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all shadow-lg">HANTAR PENDAFTARAN</button>
             </div>
@@ -263,7 +255,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/macros/s/AKfycbw0YJmpz5u4NIwdA3xfPp0alwNTw0krzXsDGYpQaQa25iC-yBBu0TUT2sjwbiUDnK1iVg/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbwHdaSIy9sZUx1_9ccPy7z01_j4OQ4LAljeVsNR5RsvzTGeINPTnl3VeTth7ThfeE4VUw/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -1327,4 +1319,3 @@
     </script>
 </body>
 </html>
-
