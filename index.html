@@ -263,7 +263,7 @@
         /* -------------------------------------------------------------------------- */
         const SECURE_CORE = {
             // CONFIG UTAMA
-            API_URL: "https://script.google.com/macros/s/AKfycbwzbxOm5tsN0tAxSgWLAL4pGcVfiP0_QOLH2c68Ut_dZEs4rFc3SLOQC-KzvPPn2bA7Iw/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbw0YJmpz5u4NIwdA3xfPp0alwNTw0krzXsDGYpQaQa25iC-yBBu0TUT2sjwbiUDnK1iVg/exec",
             
             // SISTEM LESEN (TARIKH MATI)
             LICENSE: {
@@ -525,6 +525,10 @@
                 try {
                     return JSON.parse(text);
                 } catch(e) {
+                    // DETECT HTML RESPONSE (Maksudnya Google Block Akses / Minta Login)
+                    if(text.includes("<!DOCTYPE html>") || text.includes("google.com/accounts")) {
+                         throw new Error("RALAT DEPLOYMENT: App ini WAJIB set 'Who has access' = 'Anyone'. Jangan guna 'Restricted' kerana ia menghalang PWA menghubungi server.");
+                    }
                     throw new Error("Respon pelayan bukan JSON: " + text.substring(0, 50) + "...");
                 }
 
@@ -1323,4 +1327,3 @@
     </script>
 </body>
 </html>
-
